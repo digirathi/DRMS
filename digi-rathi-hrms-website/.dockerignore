@@ -1,0 +1,11 @@
+data
+node_modules
+*.log
+.git
+tests
+test_app.js
+test_check.js
+
+.env.local
+
+.env.supabase.local

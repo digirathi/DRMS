@@ -1,0 +1,14 @@
+{
+  "name": "digirathi-hrms",
+  "projectRef": "rtcvneqwysksqijexbir",
+  "organizationId": "dhpitxhxsmcjhxtrkyim",
+  "region": "ap-south-1",
+  "dashboardUrl": "https://supabase.com/dashboard/project/rtcvneqwysksqijexbir",
+  "apiUrl": "https://rtcvneqwysksqijexbir.supabase.co",
+  "verifiedOn": "20/10/2026",
+  "projectStatus": "ACTIVE_HEALTHY",
+  "applicationConnection": "CONNECTED",
+  "localDataSource": "Supabase Postgres",
+  "applicationSchemaCreated": true,
+  "containsSecrets": false
+}

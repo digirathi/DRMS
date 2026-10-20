@@ -1,0 +1,20 @@
+{
+  "name": "digi-rathi-hrms-website",
+  "version": "1.0.0",
+  "description": "DigiRathi HRMS Web Application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "node --test tests/*.test.cjs"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "nodemailer": "10.1.7"
+  }
+}

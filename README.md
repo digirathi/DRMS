@@ -34,3 +34,7 @@ The main application had 118 passing tests at the Supabase cutover on 20/10/2026
 ## Private files
 
 Credentials, local databases, employee uploads, log files, installed dependencies, generated builds and backup copies are excluded. Install dependencies from the lockfiles. Keep Gmail and Supabase private settings outside version control; each deployment requires its own secure configuration.
+
+## Public source copy
+
+Embedded demonstration identities, contact addresses, banking and statutory identifiers have been replaced with explicit demo placeholders for public sharing. These fixtures are not employee records or valid payment instructions. Private environment settings, live databases and uploads remain excluded. The React `src/data` modules are application source and are included.

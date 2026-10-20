@@ -1,0 +1,527 @@
+// Prisma Schema for HRMS Attendance & Leave Management with Immutable Audit Log
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  HR
+  EMPLOYEE
+  MANAGER
+  TEAM_LEADER
+}
+
+enum WorkMode {
+  OFFICE
+  WFH
+}
+
+enum AttendanceStatus {
+  COMPLETED
+  CLOCKED_IN
+  MISSING_CLOCK_IN
+  MISSING_CLOCK_OUT
+  INCOMPLETE_HOURS
+  NOT_CLOCKED_IN
+  ON_LEAVE
+  WEEK_OFF
+  HOLIDAY
+  MANUALLY_CORRECTED
+  CLOCKED_OUT
+}
+
+enum VerificationStatus {
+  IP_VERIFIED
+  GPS_VERIFIED
+  IP_AND_GPS_VERIFIED
+  VERIFICATION_FAILED
+  NOT_VERIFIED
+  NOT_REQUIRED
+}
+
+enum CorrectionStatus {
+  NO_REQUEST
+  PENDING_REVIEW
+  MORE_INFO_REQUIRED
+  APPROVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum CorrectionType {
+  INCORRECT_CLOCK_IN
+  INCORRECT_CLOCK_OUT
+  MISSING_CLOCK_IN
+  MISSING_CLOCK_OUT
+  INCORRECT_WORK_MODE
+  INCORRECT_ATTENDANCE_STATUS
+  OTHER
+}
+
+enum AuditActionType {
+  EDIT_ATTENDANCE
+  ADD_MISSING_CLOCK_IN
+  ADD_MISSING_CLOCK_OUT
+  CHANGE_WORK_MODE
+  MARK_LEAVE
+  REMOVE_LEAVE
+  CHANGE_STATUS
+  APPROVE_CORRECTION_REQUEST
+  REJECT_CORRECTION_REQUEST
+}
+
+// ==================== LEAVE MODULE ENUMS ====================
+
+enum LeaveDayType {
+  FULL_DAY
+  FIRST_HALF
+  SECOND_HALF
+}
+
+enum LeaveStatus {
+  DRAFT
+  PENDING_APPROVAL
+  MORE_INFORMATION_REQUIRED
+  APPROVED
+  REJECTED
+  WITHDRAWAL_REQUESTED
+  CANCELLATION_REQUESTED
+  CANCELLED
+  WITHDRAWN
+  EXPIRED
+}
+
+enum RefillFrequency {
+  WEEKLY
+  MONTHLY
+}
+
+enum LeaveActionType {
+  CREATE_REQUEST
+  EDIT_REQUEST
+  REQUEST_MORE_INFO
+  RESUBMIT_REQUEST
+  APPROVE_REQUEST
+  REJECT_REQUEST
+  WITHDRAW_REQUEST
+  REQUEST_CANCELLATION
+  APPROVE_CANCELLATION
+  REJECT_CANCELLATION
+  MANUAL_ADD_LEAVE
+  MANUAL_BALANCE_CREDIT
+  MANUAL_BALANCE_DEDUCT
+  MANUAL_BALANCE_RESET
+  AUTO_REFILL_SUCCESS
+  AUTO_REFILL_FAILURE
+  POLICY_CREATE
+  POLICY_UPDATE
+  TYPE_ACTIVATE
+  TYPE_DEACTIVATE
+  PROBATION_SETTING_UPDATE
+  PROBATION_OVERRIDE
+  HOLIDAY_CREATE
+  HOLIDAY_UPDATE
+}
+
+// ==================== EXISTING ATTENDANCE MODELS ====================
+
+model Attendance {
+  id                 String              @id @default(uuid())
+  employeeId         String
+  employeeName       String
+  department         String
+  date               String?             // YYYY-MM-DD
+  workMode           WorkMode?
+  clockInAt          DateTime?
+  clockOutAt         DateTime?
+  status             AttendanceStatus    @default(NOT_CLOCKED_IN)
+  verification       VerificationStatus?
+  gpsVerified        Boolean?
+  ipVerified         Boolean?
+  latitude           Float?
+  longitude          Float?
+  officeLocationId   String?
+  officeLocationName String?
+  ipAddress          String?
+  deviceInfo         String?
+  adminRemark        String?
+  correctionStatus   CorrectionStatus    @default(NO_REQUEST)
+  lastModifiedBy     String?
+  lastModifiedAt     DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  auditLogs          AuditLog[]
+  correctionRequests CorrectionRequest[]
+
+  @@index([employeeId, createdAt])
+  @@index([status])
+  @@index([workMode])
+  @@index([date])
+}
+
+model CorrectionRequest {
+  id              String           @id @default(uuid())
+  attendanceId    String
+  employeeId      String
+  employeeName    String
+  department      String
+  attendanceDate  String           // YYYY-MM-DD
+  correctionType  CorrectionType
+  currentValue    String
+  requestedValue  String
+  reason          String
+  attachmentUrl   String?
+  status          CorrectionStatus @default(PENDING_REVIEW)
+  submittedAt     DateTime         @default(now())
+  reviewerId      String?
+  reviewerName    String?
+  reviewerRole    UserRole?
+  reviewNote      String?
+  rejectionReason String?
+  moreInfoMessage String?
+  employeeReply   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  attendance      Attendance       @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+
+  @@index([attendanceId])
+  @@index([employeeId])
+  @@index([status])
+}
+
+model AuditLog {
+  id                  String          @id @default(uuid())
+  attendanceId        String
+  employeeId          String
+  action              AuditActionType
+  fieldName           String?
+  oldValue            String?
+  newValue            String?
+  reason              String
+  editedByUserId      String
+  editedByName        String
+  editedByRole        UserRole
+  ipAddress           String
+  deviceInfo          String
+  correctionRequestId String?
+  createdAt           DateTime        @default(now())
+
+  attendance          Attendance      @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+
+  @@index([attendanceId])
+  @@index([employeeId])
+  @@index([createdAt])
+}
+
+// ==================== LEAVE MODULE MODELS ====================
+
+model LeaveType {
+  id                          String           @id @default(uuid())
+  name                        String
+  shortName                   String?
+  code                        String           @unique
+  description                 String?
+  isPaid                      Boolean          @default(true)
+  isActive                    Boolean          @default(true)
+  displayColor                String?          @default("#6366f1")
+  
+  // General Settings
+  annualAllocation            Float            @default(12)
+  leavesAllowedPerYear        Float?           @default(12)
+  weekendsBetweenLeave        String?          @default("NOT_CONSIDERED") // NOT_CONSIDERED | CONSIDERED
+  holidaysBetweenLeave        String?          @default("NOT_CONSIDERED") // NOT_CONSIDERED | CONSIDERED
+  creditableOnAccrualBasis    Boolean          @default(false)
+  accrualFrequency            String?          @default("MONTHLY") // MONTHLY | QUARTERLY | YEARLY
+  accrualAmount               Float?           @default(1)
+  allowedUnderProbation       Boolean          @default(true)
+  allowedUnderNoticePeriod    Boolean          @default(false)
+  encashmentEnabled           Boolean          @default(false)
+  encashmentMinBalance        Float?           @default(0)
+  encashmentMaxDays           Float?           @default(0)
+  carryForwardEnabled         Boolean          @default(false)
+  maximumCarryForward         Float?
+  carryForwardExpiryDays      Int?
+
+  // Advanced Settings
+  maxLeavesAllowedInMonth     Float?
+  continuousLeavesAllowed     Float?
+  negativeLeavesAllowed       Boolean          @default(false)
+  negativeBalanceLimit        Float?           @default(0)
+  futureDatedLeavesAllowed    Boolean          @default(true)
+  futureDatedAllowedAfterDays Int?             @default(0)
+  backdatedLeavesAllowed      Boolean          @default(false)
+  backdatedAllowedUpToDays    Int?             @default(15)
+  applyLeavesForNextYearTill  String?
+
+  // Legacy compatibility fields
+  minimumDuration             Float            @default(0.5)
+  maximumDuration             Float?
+  maximumConsecutiveDays      Float?
+  minimumNoticeDays           Int              @default(1)
+  allowHalfDay                Boolean          @default(true)
+  allowNegativeBalance        Boolean          @default(false)
+  attachmentRequired          Boolean          @default(false)
+  attachmentRequiredAfterDays Int?             @default(3)
+  countWeekends               Boolean          @default(false)
+  countHolidays               Boolean          @default(false)
+  sandwichRuleEnabled         Boolean          @default(false)
+  availableDuringProbation    Boolean          @default(true)
+  autoRefillEnabled           Boolean          @default(false)
+  autoRefillFrequency         RefillFrequency?
+  autoRefillAmount            Float?
+  refillDayOfWeek             Int?             // 1=Mon, 7=Sun
+  refillDayOfMonth            Int?             // 1..28 or 99 (last day)
+  refillDuringProbation       Boolean          @default(false)
+  maximumBalanceCap           Float?
+
+  createdAt                   DateTime         @default(now())
+  updatedAt                   DateTime         @updatedAt
+
+  leaveRequests               LeaveRequest[]
+  leaveBalances               LeaveBalance[]
+  refillConfigs               LeaveAutoRefillConfig[]
+}
+
+model LeaveRequest {
+  id                  String             @id @default(uuid())
+  employeeId          String
+  employeeName        String
+  employeeCode        String
+  department          String
+  joiningDate         String?            // YYYY-MM-DD
+  officeLocationId    String?
+  officeLocationName  String?
+  leaveTypeId         String
+  leaveTypeName       String
+  isPaid              Boolean            @default(true)
+  startDate           String             // YYYY-MM-DD
+  endDate             String             // YYYY-MM-DD
+  dayType             LeaveDayType       @default(FULL_DAY)
+  totalDays           Float
+  currentBalance      Float
+  balanceAfterApp     Float
+  reason              String
+  handoverPerson      String?
+  handoverNote        String?
+  emergencyContact    String?
+  attachmentUrl       String?
+  attachmentName      String?
+  status              LeaveStatus        @default(PENDING_APPROVAL)
+  version             Int                @default(1) // Optimistic concurrency lock
+  submittedAt         DateTime           @default(now())
+  processedById       String?
+  processedByName     String?
+  processedByRole     UserRole?
+  processedAt         DateTime?
+  approvalNote        String?
+  rejectionReason     String?
+  moreInfoMessage     String?
+  employeeResubmitNote String?
+  cancellationReason  String?
+  hasAttendanceConflict Boolean          @default(false)
+  hasOverlappingLeave Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  leaveType           LeaveType          @relation(fields: [leaveTypeId], references: [id])
+  actions             LeaveRequestAction[]
+  attachments         LeaveAttachment[]
+
+  @@index([employeeId])
+  @@index([status])
+  @@index([startDate, endDate])
+}
+
+model LeaveRequestAction {
+  id             String          @id @default(uuid())
+  requestId      String
+  actionType     LeaveActionType
+  actorId        String
+  actorName      String
+  actorRole      UserRole
+  note           String?
+  oldStatus      LeaveStatus?
+  newStatus      LeaveStatus?
+  createdAt      DateTime        @default(now())
+
+  leaveRequest   LeaveRequest    @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+}
+
+model LeaveBalance {
+  id                String       @id @default(uuid())
+  employeeId        String
+  employeeName      String
+  employeeCode      String
+  department        String
+  leaveTypeId       String
+  leaveTypeName     String
+  openingBalance    Float        @default(0)
+  refilled          Float        @default(0)
+  carriedForward    Float        @default(0)
+  used              Float        @default(0)
+  pending           Float        @default(0)
+  manuallyAdjusted  Float        @default(0)
+  availableBalance  Float        @default(0)
+  expiringBalance   Float        @default(0)
+  lastUpdated       DateTime     @updatedAt
+
+  leaveType         LeaveType    @relation(fields: [leaveTypeId], references: [id])
+  transactions      LeaveBalanceTransaction[]
+
+  @@unique([employeeId, leaveTypeId])
+  @@index([employeeId])
+}
+
+model LeaveBalanceTransaction {
+  id              String       @id @default(uuid())
+  balanceId       String
+  employeeId      String
+  leaveTypeId     String
+  transactionType LeaveActionType
+  amount          Float
+  previousBalance Float
+  newBalance      Float
+  effectiveDate   String       // YYYY-MM-DD
+  reason          String
+  internalNote    String?
+  performedById   String
+  performedByName String
+  performedByRole UserRole
+  idempotencyKey  String?      @unique
+  createdAt       DateTime     @default(now())
+
+  leaveBalance    LeaveBalance @relation(fields: [balanceId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+  @@index([leaveTypeId])
+}
+
+model LeaveAutoRefillConfig {
+  id                 String           @id @default(uuid())
+  leaveTypeId        String
+  enabled            Boolean          @default(true)
+  frequency          RefillFrequency  @default(MONTHLY)
+  amount             Float            @default(1.5)
+  refillDayOfWeek    Int?
+  refillDayOfMonth   Int?
+  startDate          String           // YYYY-MM-DD
+  maxCap             Float?
+  carryUnusedForward Boolean          @default(true)
+  refillInProbation  Boolean          @default(false)
+  prorateFirstRefill Boolean          @default(true)
+  stopWhenInactive   Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+
+  leaveType          LeaveType        @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
+  runs               LeaveAutoRefillRun[]
+}
+
+model LeaveAutoRefillRun {
+  id              String                @id @default(uuid())
+  configId        String
+  leaveTypeId     String
+  leaveTypeName   String
+  period          String                // YYYY-MM or YYYY-WW
+  runDate         DateTime              @default(now())
+  status          String                // SUCCESS, FAILED, PARTIAL
+  successCount    Int                   @default(0)
+  failureCount    Int                   @default(0)
+  totalAmountAdded Float                @default(0)
+  errorMessage    String?
+
+  config          LeaveAutoRefillConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([period])
+}
+
+model ProbationSettings {
+  id                               String   @id @default("global")
+  enabled                          Boolean  @default(true)
+  duration                         Int      @default(3)
+  durationUnit                     String   @default("MONTHS") // DAYS or MONTHS
+  calculateFrom                    String   @default("JOINING_DATE")
+  defaultLeaveAvailabilityProbation Boolean  @default(false)
+  notifyBeforeCompletionDays       Int      @default(15)
+  updatedAt                        DateTime @updatedAt
+}
+
+model EmployeeProbationOverride {
+  id             String   @id @default(uuid())
+  employeeId     String   @unique
+  employeeName   String
+  originalEndDate String
+  overrideEndDate String
+  reason         String
+  overriddenById String
+  overriddenByName String
+  createdAt      DateTime @default(now())
+}
+
+model Holiday {
+  id                String   @id @default(uuid())
+  name              String
+  date              String   // YYYY-MM-DD
+  dayType           LeaveDayType @default(FULL_DAY)
+  description       String?
+  recurringAnnually Boolean  @default(true)
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+
+  @@index([date])
+}
+
+model LeaveAuditLog {
+  id             String          @id @default(uuid())
+  employeeId     String
+  requestId      String?
+  leaveTypeId    String?
+  action         LeaveActionType
+  oldValue       String?
+  newValue       String?
+  performedBy    String
+  userRole       UserRole
+  reason         String
+  ipAddress      String
+  deviceInfo     String
+  createdAt      DateTime        @default(now())
+
+  @@index([employeeId])
+  @@index([createdAt])
+}
+
+model LeaveAttachment {
+  id            String       @id @default(uuid())
+  requestId     String
+  fileName      String
+  fileSize      Int
+  mimeType      String
+  fileUrl       String
+  uploadedAt    DateTime     @default(now())
+
+  leaveRequest  LeaveRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+}
+
+model LeaveNotification {
+  id          String   @id @default(uuid())
+  recipientId String
+  userRole    UserRole
+  title       String
+  message     String
+  type        String
+  requestId   String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([recipientId])
+}

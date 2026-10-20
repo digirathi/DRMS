@@ -1,0 +1,6 @@
+export function sqlText(source){let n=0;return source.replace(/\?/g,()=>'$'+(++n)).replace(/\bdate LIKE\b/gi,'date::text LIKE');}
+export function createDatabase(connection){let transaction=false;return {
+ prepare(source){const text=sqlText(source),query=async values=>{try{return await connection.unsafe(text,values);}catch(e){const conflict=['23505','40001','40P01'].includes(e.code);throw Object.assign(new Error(conflict?'This record changed or already exists. Refresh and retry.':'The database could not save this action. Check the record and try again.'),{status:conflict?409:e.code==='23514'?400:503});}};return {async get(...v){return (await query(v))[0];},all(...v){return query(v);},async run(...v){const result=await query(v);return {changes:result.count};}};},
+ async transaction(fn){if(transaction)return fn();await connection.unsafe('BEGIN');transaction=true;try{await connection.unsafe('select pg_advisory_xact_lock(1414745417)');const result=await fn();await connection.unsafe('COMMIT');transaction=false;return result;}catch(e){await connection.unsafe('ROLLBACK');transaction=false;throw e;}},
+ async finish(){if(transaction){await connection.unsafe('ROLLBACK');transaction=false;}}
+ };}

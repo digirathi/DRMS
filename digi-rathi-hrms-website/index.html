@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digi Rathi HRMS</title>
+  <link rel="stylesheet" href="assets/inter.css" />
+  <link rel="stylesheet" href="styles.css?v=2.0.0" />
+  <link rel="stylesheet" href="professional.css?v=2.0.0" />
+  <script src="preferences.js?v=2.0.0"></script>
+  <link rel="stylesheet" href="modules.css?v=4.0.0">
+  <link rel="stylesheet" href="workplace.css?v=4.0.0">
+  <link rel="stylesheet" href="employee-workspace.css?v=5.0.0">
+  <link rel="stylesheet" href="employee-payroll.css?v=1.0.0">
+  <link rel="stylesheet" href="attendance-policy.css?v=1.0.0">
+  <link rel="stylesheet" href="notifications.css?v=1.0.0">
+<link rel="stylesheet" href="supabase.css?v=1.0.0">
+</head>
+
+<body class="auth-pending">
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+  <div class="glass-bg-blobs" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+  
+  <section class="auth-screen" id="authScreen" aria-label="Digi Rathi HRMS authentication">
+    <div class="auth-panel">
+      <div class="auth-panel-top">
+        <div class="auth-brand">
+          <img src="assets/digi-rathi-logo-cropped.png" alt="Digi Rathi logo" />
+          <div>
+            <strong>Digi Rathi</strong>
+            <span>Internal HRMS</span>
+          </div>
+        </div>
+        <button class="icon-button auth-theme-toggle" id="authThemeToggle" type="button" aria-label="Switch to dark mode">
+          <i data-lucide="moon"></i>
+        </button>
+      </div>
+
+      <!-- Sign In Form -->
+      <form class="auth-view active" id="loginForm" data-auth-view="signin">
+        <div class="auth-heading">
+          <p class="eyebrow">Secure access</p>
+          <h1 id="authTitle">Sign in</h1>
+          <p>Use your official Digi Rathi account.</p>
+        </div>
+        <label>
+          Email or employee ID
+          <input type="text" name="email" autocomplete="username" placeholder=" " required />
+        </label>
+        <label>
+          Password
+          <input type="password" name="password" autocomplete="current-password" placeholder=" " required />
+        </label>
+        <div class="auth-link-row">
+          <button class="auth-link" id="forgotPasswordLink" type="button">Forgot password?</button>
+        </div>
+        <p class="auth-status" id="authStatus" role="status">Checking your session...</p>
+        
+        <button class="primary-button auth-submit" id="loginButton" type="submit">
+          <i data-lucide="log-in"></i><span>Sign in</span>
+        </button>
+        <button class="secondary-button auth-submit" id="mockBypassButton" formnovalidate type="button" style="margin-top: 10px;">
+          <i data-lucide="eye"></i><span>Explore demo</span>
+        </button>
+      </form>
+
+      <!-- Forgot Password Form -->
+      <form class="auth-view" id="forgotPasswordForm" data-auth-view="forgot" hidden>
+        <div class="auth-heading">
+          <p class="eyebrow">Step 1 of 3</p>
+          <h1>Forgot password?</h1>
+          <p>Enter your official email and we will send a secure reset link.</p>
+        </div>
+        <label>
+          Official email
+          <input type="email" name="email" autocomplete="email" placeholder=" " required />
+        </label>
+        <p class="auth-status" id="forgotPasswordStatus" role="status"></p>
+        <button class="primary-button auth-submit" id="sendResetLinkButton" type="submit">
+          <i data-lucide="mail"></i><span>Send Reset Link</span>
+        </button>
+        <button class="auth-back-button" type="button" data-auth-back>
+          <i data-lucide="arrow-left"></i><span>Back to Sign In</span>
+        </button>
+      </form>
+
+      <!-- Reset Link Sent Screen -->
+      <section class="auth-view auth-confirmation" id="resetSentView" data-auth-view="sent" hidden aria-live="polite">
+        <div class="auth-success-icon"><i data-lucide="mail-check"></i></div>
+        <div class="auth-heading">
+          <p class="eyebrow">Step 2 of 3</p>
+          <h1>Check your email</h1>
+          <p>If this email is registered with Digi Rathi HRMS, a secure password reset email has been queued. The link will expire in 30 minutes.</p>
+        </div>
+        <button class="secondary-button auth-submit" id="resendResetButton" type="button" disabled>
+          <i data-lucide="refresh-cw"></i><span>Resend Link in 60s</span>
+        </button>
+        <button class="auth-back-button" type="button" data-auth-back>
+          <i data-lucide="arrow-left"></i><span>Back to Sign In</span>
+        </button>
+      </section>
+
+      <!-- Create New Password Form -->
+      <form class="auth-view" id="resetPasswordForm" data-auth-view="reset" hidden>
+        <div class="auth-heading">
+          <p class="eyebrow">Step 3 of 3</p>
+          <h1>Create new password</h1>
+          <p>Choose a strong password for your HRMS account.</p>
+        </div>
+        <label>
+          New Password
+          <input type="password" name="newPassword" autocomplete="new-password" minlength="12" placeholder=" " required />
+        </label>
+        <label>
+          Confirm Password
+          <input type="password" name="confirmPassword" autocomplete="new-password" minlength="12" placeholder=" " required />
+        </label>
+        <div class="password-strength" id="passwordStrength" aria-live="polite">
+          <div class="strength-track"><span></span></div>
+          <p>Use 12+ characters with uppercase, lowercase, number and special character.</p>
+        </div>
+        <p class="auth-status" id="resetPasswordStatus" role="status"></p>
+        <button class="primary-button auth-submit" id="resetPasswordButton" type="submit">
+          <i data-lucide="key-round"></i><span>Reset Password</span>
+        </button>
+        <button class="auth-back-button" type="button" data-auth-back>
+          <i data-lucide="arrow-left"></i><span>Back to Sign In</span>
+        </button>
+      </form>
+
+      <!-- Password Changed Confirmation -->
+      <section class="auth-view auth-confirmation" id="passwordChangedView" data-auth-view="changed" hidden aria-live="polite">
+        <div class="auth-success-icon"><i data-lucide="circle-check-big"></i></div>
+        <div class="auth-heading">
+          <p class="eyebrow">Complete</p>
+          <h1>Password changed</h1>
+          <p>You can now sign in with your new password.</p>
+        </div>
+        <button class="primary-button auth-submit" id="goToSignInButton" type="button">
+          <i data-lucide="log-in"></i><span>Go to Sign In</span>
+        </button>
+      </section>
+    </div>
+  </section>
+
+  <!-- Main Application Shell -->
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-hidden="true" inert>
+      <div class="sidebar-brand"><img src="assets/digi-rathi-logo-cropped.png" alt="" /><div><strong>Digi Rathi</strong><small>People & workplace</small></div></div>
+      <div class="sidebar-profile">
+        <div class="profile-avatar">R</div>
+        <div>
+          <strong>Demo Person 23</strong>
+          <span id="profileRole">Super Admin</span>
+        </div>
+        <button class="icon-button sidebar-close" id="sidebarClose" aria-label="Close menu"><i data-lucide="x"></i></button>
+      </div>
+
+      <nav class="nav-list" aria-label="Main navigation">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="icon"><i data-lucide="layout-dashboard"></i></span>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-view="directory"><span class="icon"><i data-lucide="contact-round"></i></span><span>Directory</span></button>
+        <button class="nav-item" data-view="employees">
+          <span class="icon"><i data-lucide="users"></i></span>
+          <span>Employees</span>
+        </button>
+        <button class="nav-item" data-view="attendance">
+          <span class="icon"><i data-lucide="clock-3"></i></span>
+          <span>Attendance</span>
+        </button>
+        <button class="nav-item" data-view="leave">
+          <span class="icon"><i data-lucide="calendar-days"></i></span>
+          <span>Leave</span>
+        </button>
+        <button class="nav-item" data-view="payroll">
+          <span class="icon"><i data-lucide="indian-rupee"></i></span>
+          <span>Payroll</span>
+        </button>
+        <button class="nav-item" data-view="assets">
+          <span class="icon"><i data-lucide="laptop"></i></span>
+          <span>Assets</span>
+        </button>
+        <button class="nav-item" data-view="tickets">
+          <span class="icon"><i data-lucide="life-buoy"></i></span>
+          <span>Help Desk</span>
+        </button>
+        <button class="nav-item" data-view="reports">
+          <span class="icon"><i data-lucide="chart-spline"></i></span>
+          <span>Reports</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <span class="icon"><i data-lucide="settings-2"></i></span>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span>Office hours</span>
+        <strong>10:00 AM - 7:00 PM</strong>
+      </div>
+    </aside>
+
+    <main class="main-area" id="mainContent" tabindex="-1">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button" id="menuToggle" aria-label="Open menu" aria-expanded="false"><i data-lucide="menu"></i></button>
+          <div class="topbar-brand">
+            <div>
+              <strong>DRMS</strong>
+            </div>
+          </div>
+          <div class="page-heading">
+            <p class="eyebrow" id="breadcrumb">Dashboard</p>
+            <h1 id="pageTitle">Good morning, Digi Rathi</h1>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <div class="role-selector-wrap" style="display:flex; align-items:center; gap:6px; background:var(--panel-soft); padding:4px 10px; border-radius:12px; border:1px solid var(--line);">
+            <span style="font-size:0.75rem; font-weight:700; color:var(--muted-text); display:flex; align-items:center; gap:4px;"><i data-lucide="shield-check" style="width:14px; height:14px; color:var(--primary);"></i> Role:</span>
+            <select aria-label="Preview role" id="roleSelect" onchange="window.switchActiveUserRole(this.value)" style="background:transparent; border:none; color:var(--text); font-size:0.8rem; font-weight:700; cursor:pointer; outline:none; font-family:inherit;">
+              <option value="Super Admin">Super Admin (Demo Person 23)</option>
+              <option value="HR Admin">HR Admin (Demo Person 25)</option>
+
+              <option value="Employee">Employee (Demo Person 24)</option>
+            </select>
+          </div>
+          <button class="icon-button" id="themeToggle" aria-label="Toggle dark mode"><i data-lucide="moon"></i></button>
+          <button class="notification-button" id="notificationButton" aria-label="Open notifications" aria-expanded="false" aria-controls="notificationDrawer">
+            <i data-lucide="bell"></i>
+            <strong id="notificationCount">0</strong>
+          </button>
+        </div>
+      </header>
+
+      <section class="notification-drawer" id="notificationDrawer" aria-label="Notifications" aria-hidden="true" hidden>
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Notification Center</p>
+            <h2>Latest updates</h2>
+          </div>
+          <button class="text-button" id="markReadButton">Mark all read</button>
+        </div>
+        <div class="notification-list" id="notificationList"></div>
+      </section>
+
+      <section class="content-view active" id="dashboard"></section>
+      <section class="content-view" id="directory"></section>
+      <section class="content-view" id="employees"></section>
+      <section class="content-view" id="attendance"></section>
+      <section class="content-view" id="leave"></section>
+      <section class="content-view" id="payroll"></section>
+      <section class="content-view" id="assets"></section>
+      <section class="content-view" id="tickets"></section>
+      <section class="content-view" id="reports"></section>
+      <section class="content-view" id="settings"></section>
+    </main>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+
+  <!-- Dialog Modals -->
+  <dialog class="modal" id="leaveModal">
+    <form id="leaveForm">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Leave Request</p>
+          <h2>Apply for leave</h2>
+        </div>
+        <button class="icon-button" type="button" data-close-dialog="leaveModal" aria-label="Close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="form-grid">
+        <label>
+          Leave Type
+          <select name="leaveType" required>
+            <option>Casual Leave</option>
+            <option>Sick Leave</option>
+            <option>Earned Leave</option>
+            <option>Unpaid Leave / LWP</option>
+            <option>Compensatory Off</option>
+            <option>Maternity Leave</option>
+            <option>Paternity Leave</option>
+          </select>
+        </label>
+        <label>
+          Duration
+          <select name="duration" required>
+            <option>Full Day</option>
+            <option>First Half</option>
+            <option>Second Half</option>
+          </select>
+        </label>
+        <label>
+          Start Date
+          <input type="date" name="startDate" required />
+        </label>
+        <label>
+          End Date
+          <input type="date" name="endDate" required />
+        </label>
+        <label class="full-span">
+          Reason
+          <textarea rows="4" name="reason" minlength="5" required placeholder="Write a short reason"></textarea>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="secondary-button" type="button" data-close-dialog="leaveModal">Cancel</button>
+        <button class="primary-button" type="submit" id="submitLeaveButton">Submit Request</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal" id="ticketModal">
+    <form id="ticketForm">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Help Desk</p>
+          <h2>Create support ticket</h2>
+        </div>
+        <button class="icon-button" type="button" data-close-dialog="ticketModal" aria-label="Close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="form-grid">
+        <label>
+          Category
+          <select name="category" required>
+            <option>IT Support</option>
+            <option>HR Support</option>
+            <option>Admin Support</option>
+          </select>
+        </label>
+        <label>
+          Priority
+          <select name="priority" required>
+            <option>Medium</option>
+            <option>Low</option>
+            <option>High</option>
+            <option>Urgent</option>
+          </select>
+        </label>
+        <label class="full-span">
+          Title
+          <input type="text" name="title" minlength="4" required placeholder="Example: Laptop charger issue" />
+        </label>
+        <label class="full-span">
+          Description
+          <textarea rows="4" name="description" minlength="10" required placeholder="Describe the request"></textarea>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="secondary-button" type="button" data-close-dialog="ticketModal">Cancel</button>
+        <button class="primary-button" type="submit" id="submitTicketButton">Create Ticket</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="workflow-modal" id="workflowModal" aria-labelledby="workflowTitle">
+    <div id="workflowContent"></div>
+  </dialog>
+
+  <script src="assets/lucide.min.js"></script>
+  <script>
+    window.HRMS_API_BASE = window.HRMS_API_BASE || window.location.origin;
+  </script>
+  <script src="attendance-policy.js?v=1.0.0"></script>
+  <script src="domain.js?v=4.0.0"></script>
+  <script src="app.js?v=4.0.0"></script>
+  <script src="payroll.js?v=2.0.0"></script>
+  <script src="workflows.js?v=2.0.0"></script>
+  <script src="interface.js?v=4.0.0"></script>
+  <script src="modules.js?v=4.0.0"></script>
+  <script src="attendance-workflow.js?v=4.0.0"></script>
+  <script src="payroll-workflow.js?v=4.0.0"></script>
+  <script src="dates.js?v=4.0.0"></script>
+  <script src="workplace.js?v=4.0.0"></script>
+  <script src="employee-domain.js?v=5.0.0"></script>
+  <script src="employee-workspace.js?v=5.0.0"></script>
+  <script src="employee-payroll.js?v=1.0.0"></script>
+  <script src="attendance-policy-ui.js?v=1.0.0"></script>
+  <script src="local-backend-ui.js?v=1.1.0"></script>
+  <script src="notifications-ui.js?v=1.1.0"></script>
+<script src="supabase-ui.js?v=1.0.0"></script>
+</body>
+
+</html>

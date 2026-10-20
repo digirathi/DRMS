@@ -1,0 +1,534 @@
+import {asyncMap,asyncFilter,asyncFind,asyncSome,asyncEvery,asyncEach} from './async-tools.mjs';
+'use strict';
+
+import crypto from 'node:crypto';
+import D from './domain.mjs';
+import P from './attendance-policy.mjs';
+const pending = ['PENDING_APPROVAL', 'CANCELLATION_REQUESTED'],
+  reserved = ['PENDING_APPROVAL', 'APPROVED', 'CANCELLATION_REQUESTED'];
+const policyDefaults = {
+  name: 'Annual leave',
+  code: 'AL',
+  description: '',
+  isPaid: true,
+  displayColor: '#5146d9',
+  leavesAllowedPerYear: 0,
+  weekendsBetweenLeave: 'NOT_CONSIDERED',
+  holidaysBetweenLeave: 'NOT_CONSIDERED',
+  creditableOnAccrualBasis: false,
+  accrualFrequency: 'YEARLY',
+  accrualAmount: 0,
+  allowedUnderProbation: true,
+  allowedUnderNoticePeriod: true,
+  encashmentEnabled: false,
+  encashmentMinBalance: 0,
+  encashmentMaxDays: 0,
+  carryForwardEnabled: false,
+  maximumCarryForward: 0,
+  carryForwardExpiryDays: 0,
+  maxLeavesAllowedInMonth: null,
+  continuousLeavesAllowed: null,
+  negativeLeavesAllowed: false,
+  negativeBalanceLimit: 0,
+  futureDatedLeavesAllowed: true,
+  futureDatedAllowedAfterDays: 0,
+  backdatedLeavesAllowed: true,
+  backdatedAllowedUpToDays: 30,
+  applyLeavesForNextYearTill: null,
+  active: true
+};
+function createHR({
+  db,
+  now,
+  check,
+  tx,
+  audit,
+  notifications,
+  policyAt,
+  weekend,
+  record,
+  holidays
+}) {
+  const get = async (s, ...v) => await db.prepare(s).get(...v),
+    all = async (s, ...v) => await db.prepare(s).all(...v),
+    run = async (s, ...v) => await db.prepare(s).run(...v),
+    today = () => P.companyDate(now());
+  const log = async (a, action, id, v) => {
+    await run('INSERT INTO LeaveAuditLog(actor,action,target,detail,at) VALUES(?,?,?,?,?)', a.id, action, id, JSON.stringify(v), new Date(now()).toISOString());
+    await audit(a.id, action, id, v);
+  };
+  const person = async id => await get('SELECT * FROM employees WHERE id=?', id);
+  const sa = a => check(a.role === 'SUPER_ADMIN', 'Only Super Admin can manage leave policies or finalize salary slips.', 403);
+  const manage = async (a, id) => check(D.canAdminister(a.role, a.id, await person(id)), 'Only Super Admin can review administrator records. You cannot review your own leave.', 403);
+  const types = async () => (await all('SELECT * FROM leave_types')).map(r => ({
+    ...JSON.parse(r.payload),
+    id: r.id,
+    version: r.version
+  }));
+  // A zero-quota paid policy is not an entitlement. Super Admin explicitly assigns annual quotas.
+  const mapRequest = r => ({
+    ...r,
+    employeeId: r.employee_id,
+    leaveTypeId: r.type_id,
+    startDate: r.start_date,
+    endDate: r.end_date,
+    dayType: r.day_type,
+    isPaid: !!r.is_paid,
+    policy: JSON.parse(r.policy_snapshot),
+    dates: JSON.parse(r.dates)
+  });
+  const requests = async () => (await all('SELECT * FROM leave_requests ORDER BY created_at DESC')).map(mapRequest);
+  const balance = async (id, type, year) => {
+    const b = (await get('SELECT * FROM leave_balances WHERE employee_id=? AND type_id=? AND year=?', id, type, year)) || {
+      employee_id: id,
+      type_id: type,
+      year,
+      opening: 0,
+      used: 0,
+      version: 0
+    };
+    const hold = (await get("SELECT COALESCE(SUM(days),0) AS n FROM leave_requests WHERE employee_id=? AND type_id=? AND year=? AND status='PENDING_APPROVAL'", id, type, year)).n;
+    return {
+      ...b,
+      reserved: hold,
+      available: b.opening - b.used - hold
+    };
+  };
+  const fullLeave = async (id, day) => !!(await get('SELECT request_id FROM leave_absence WHERE employee_id=? AND date=?', id, day));
+  async function bootstrap(a) {
+    const visible = r => a.role !== 'EMPLOYEE' || r.employee_id === a.id;
+    return {
+      leaveTypes: await types(),
+      requests: (await requests()).filter(visible),
+      balances: await asyncMap((await all('SELECT * FROM leave_balances')).filter(visible), async b => await balance(b.employee_id, b.type_id, b.year)),
+      absences: (await all('SELECT * FROM leave_absence')).filter(visible),
+      slips: (await asyncFilter(await all('SELECT id,employee_id,year,month,status,version,finalized_at FROM salary_slips ORDER BY year DESC,month DESC'), async r => r.employee_id === a.id || a.role === 'SUPER_ADMIN' || a.role === 'HR_ADMIN' && D.canAdminister(a.role, a.id, await person(r.employee_id)))).filter(r => r.status === 'FINALIZED' || a.role === 'SUPER_ADMIN'),
+      notificationSettings: await notifications.settings(),
+      emails: await notifications.list(a)
+    };
+  }
+  async function event(r, kind, review = false) {
+    const employee = await person(r.employee_id);
+    const recipients = review ? (await all("SELECT * FROM employees WHERE active=1 AND role<>'EMPLOYEE'")).filter(x => x.id !== employee.id && D.canAdminister(x.role, x.id, employee)) : [employee];
+    await notifications.queue(`leave:${r.id}:${r.version}:${kind}`, review ? 'LEAVE_REVIEW' : kind, recipients, {
+      employeeName: employee.name,
+      leaveName: JSON.parse(r.policy_snapshot).name,
+      startDate: r.start_date,
+      endDate: r.end_date,
+      days: r.days,
+      requestId: r.id,
+      requestStatus: r.status,
+      path: '/?view=leave'
+    });
+  }
+  async function success(r, action, effect) {
+    return {
+      success: true,
+      id: r.id,
+      message: `${(await person(r.employee_id)).name} · ${D.date(r.start_date)} – ${D.date(r.end_date)}: ${action}. ${effect}`
+    };
+  }
+  function validatePolicy(v) {
+    const p = {
+      ...policyDefaults
+    };
+    for (const key of Object.keys(p)) if (Object.hasOwn(v, key)) p[key] = v[key];
+    check(typeof p.name === 'string' && p.name.trim().length >= 2 && p.name.length <= 80, 'Enter a leave name (2–80 characters).');
+    p.name = p.name.trim();
+    check(/^[A-Z0-9]{1,10}$/.test(p.code), 'Use an uppercase alphanumeric leave code.');
+    check(/^#[0-9a-f]{6}$/i.test(p.displayColor), 'Choose a valid display color.');
+    check(typeof p.description === 'string' && p.description.length <= 500, 'Description must be at most 500 characters.');
+    for (const k of ['isPaid', 'allowedUnderProbation', 'allowedUnderNoticePeriod', 'negativeLeavesAllowed', 'futureDatedLeavesAllowed', 'backdatedLeavesAllowed', 'active']) check(typeof p[k] === 'boolean', 'Invalid policy option: ' + k);
+    for (const k of ['leavesAllowedPerYear', 'encashmentMinBalance', 'encashmentMaxDays', 'maximumCarryForward', 'carryForwardExpiryDays', 'futureDatedAllowedAfterDays', 'backdatedAllowedUpToDays']) check(Number.isFinite(p[k]) && p[k] >= 0 && p[k] <= 366, 'Invalid policy number: ' + k);
+    for (const k of ['carryForwardExpiryDays', 'futureDatedAllowedAfterDays', 'backdatedAllowedUpToDays']) check(Number.isInteger(p[k]), 'Use whole days for ' + k);
+    for (const k of ['maxLeavesAllowedInMonth', 'continuousLeavesAllowed']) check(p[k] === null || Number.isFinite(p[k]) && p[k] > 0 && p[k] <= 366, 'Enter a positive cap or leave it unlimited.');
+    for (const k of ['weekendsBetweenLeave', 'holidaysBetweenLeave']) check(['NOT_CONSIDERED', 'CONSIDERED'].includes(p[k]), 'Choose whether to count weekends and holidays.');
+    check(p.creditableOnAccrualBasis === false && p.accrualFrequency === 'YEARLY' && p.accrualAmount === 0, 'Only annual lump-sum allocation is supported.');
+    check(p.encashmentEnabled === false && p.carryForwardEnabled === false, 'Encashment and carry forward require a separate reviewed adjustment; keep these disabled.');
+    check(Number.isFinite(p.negativeBalanceLimit) && p.negativeBalanceLimit <= 0 && p.negativeBalanceLimit >= -366, 'Invalid negative balance limit.');
+    check(!p.applyLeavesForNextYearTill || D.isoDate(p.applyLeavesForNextYearTill), 'Choose a valid next-year application cutoff.');
+    return p;
+  }
+  async function apply(a, v) {
+    const p = (await types()).find(t => t.id === v.typeId && t.active);
+    check(p, 'Choose an active leave policy.');
+    const start = D.isoDate(v.startDate),
+      end = D.isoDate(v.endDate),
+      year = Number(start?.slice(0, 4));
+    check(start && end && start <= end && start.slice(0, 4) === end.slice(0, 4), 'Choose dates in one calendar year, with end on or after start.');
+    check(['FULL', 'FIRST_HALF', 'SECOND_HALF'].includes(v.dayType), 'Choose full day or half day.');
+    check(v.dayType === 'FULL' || start === end, 'Half-day requests must be for a single date.');
+    const diff = Math.round((Date.parse(start) - Date.parse(today())) / 86400000);
+    check(year >= Number(today().slice(0, 4)) && year <= Number(today().slice(0, 4)) + 1, 'Choose the current or next leave year.');
+    if (year > Number(today().slice(0, 4))) check(p.applyLeavesForNextYearTill && today() <= p.applyLeavesForNextYearTill, 'This policy is not open for next-year applications.');
+    if (diff < 0) check(p.backdatedLeavesAllowed && -diff <= p.backdatedAllowedUpToDays, 'The selected date is outside the backdated application window.');else if (diff > 0) check(p.futureDatedLeavesAllowed && diff >= p.futureDatedAllowedAfterDays, 'The selected date does not meet the future leave notice period.');
+    const dates = [];
+    for (let day = start; day <= end; day = new Date(Date.parse(day) + 86400000).toISOString().slice(0, 10)) if ((p.weekendsBetweenLeave === 'CONSIDERED' || !D.weekOff(day, await weekend())) && (p.holidaysBetweenLeave === 'CONSIDERED' || !(await holidays()).some(h => h.date === day))) dates.push(day);
+    const days = dates.length * (v.dayType === 'FULL' ? 1 : .5);
+    check(days > 0, 'The selected period has no chargeable working days.');
+    check(!p.continuousLeavesAllowed || days <= p.continuousLeavesAllowed, 'This application exceeds the consecutive leave limit.');
+    const reason = D.reason(v.reason);
+    return await tx(async () => {
+      const existing = (await requests()).filter(r => r.employee_id === a.id && reserved.includes(r.status));
+      for (const r of existing) if (r.dates.some(d => dates.includes(d))) check(v.dayType !== 'FULL' && r.day_type !== 'FULL' && v.dayType !== r.day_type, 'These dates overlap an existing leave request.', 409);
+      if (p.maxLeavesAllowedInMonth) for (const m of new Set(dates.map(d => d.slice(0, 7)))) {
+        const used = existing.filter(r => r.type_id === p.id).reduce((s, r) => s + r.dates.filter(d => d.startsWith(m)).length * (r.day_type === 'FULL' ? 1 : .5), 0);
+        check(used + dates.filter(d => d.startsWith(m)).length * (v.dayType === 'FULL' ? 1 : .5) <= p.maxLeavesAllowedInMonth, 'This application exceeds the monthly leave limit.');
+      }
+      if (p.isPaid) {
+        const b = await balance(a.id, p.id, year);
+        check(b.version > 0, 'Ask Super Admin to assign this annual leave policy first.');
+        check(b.available - days >= (p.negativeLeavesAllowed ? p.negativeBalanceLimit : 0), 'Not enough available leave balance.');
+      }
+      const id = crypto.randomUUID();
+      await run('INSERT INTO leave_requests(id,employee_id,type_id,start_date,end_date,day_type,days,year,is_paid,status,reason,created_at,policy_snapshot,dates) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)', id, a.id, p.id, start, end, v.dayType, days, year, p.isPaid ? 1 : 0, 'PENDING_APPROVAL', reason, new Date(now()).toISOString(), JSON.stringify(p), JSON.stringify(dates));
+      await log(a, 'LEAVE_SUBMITTED', id, {
+        days,
+        start,
+        end
+      });
+      const r = await get('SELECT * FROM leave_requests WHERE id=?', id);
+      await event(r, 'LEAVE_SUBMITTED');
+      await event(r, 'LEAVE_REVIEW', true);
+      return await success(r, 'application submitted', p.isPaid ? `${days} day(s) reserved until review.` : 'Unpaid leave; no paid balance reserved.');
+    });
+  }
+  async function decide(a, id, v) {
+    return await tx(async () => {
+      const r = await get('SELECT * FROM leave_requests WHERE id=?', id);
+      check(r, 'Leave request not found.', 404);
+      await manage(a, r.employee_id);
+      check(pending.includes(r.status) && r.version === Number(v.version), 'This leave request has already been processed by another approver.', 409);
+      check(['APPROVED', 'REJECTED'].includes(v.decision), 'Approve or reject this request.');
+      const note = D.reason(v.reason);
+      let status = v.decision,
+        delta = 0;
+      if (r.status === 'CANCELLATION_REQUESTED') {
+        status = v.decision === 'APPROVED' ? 'CANCELLED' : 'APPROVED';
+        if (status === 'CANCELLED') delta = -r.days;
+      } else if (status === 'APPROVED') {
+        if (r.day_type === 'FULL') for (const day of JSON.parse(r.dates)) check(!(await get('SELECT id FROM attendance WHERE employee_id=? AND date=?', r.employee_id, day)), 'Attendance punches already exist on ' + D.date(day) + '. Use half-day leave or resolve the request.', 409);
+        delta = r.days;
+      }
+      if (r.is_paid && delta) await run('UPDATE leave_balances SET used=used+?,version=version+1 WHERE employee_id=? AND type_id=? AND year=?', delta, r.employee_id, r.type_id, r.year);
+      if (status === 'APPROVED' && r.status === 'PENDING_APPROVAL' && r.day_type === 'FULL') for (const day of JSON.parse(r.dates)) await run('INSERT INTO leave_absence VALUES(?,?,?)', r.employee_id, day, r.id);
+      if (status === 'CANCELLED') await run('DELETE FROM leave_absence WHERE request_id=?', r.id);
+      await run('UPDATE leave_requests SET status=?,decision_note=?,version=version+1 WHERE id=?', status, note, r.id);
+      await log(a, 'LEAVE_' + status, r.id, {
+        previous: r.status,
+        note,
+        paidBalanceChange: r.is_paid ? -delta : 0
+      });
+      const saved = await get('SELECT * FROM leave_requests WHERE id=?', id);
+      await event(saved, r.status === 'CANCELLATION_REQUESTED' && status === 'APPROVED' ? 'LEAVE_CANCELLATION_REJECTED' : 'LEAVE_' + status);
+      return await success(saved, status.toLowerCase().replaceAll('_', ' '), r.is_paid ? `${Math.abs(delta)} paid day(s) ${delta < 0 ? 'restored' : delta > 0 ? 'used' : 'changed'}; reservation released.` : 'No paid balance change.');
+    });
+  }
+  async function cancel(a, id, v) {
+    return await tx(async () => {
+      const r = await get('SELECT * FROM leave_requests WHERE id=?', id);
+      check(r, 'Leave request not found.', 404);
+      check(r.employee_id === a.id || D.canAdminister(a.role, a.id, await person(r.employee_id)), 'You cannot cancel this employee’s leave.', 403);
+      check(r.version === Number(v.version) && ['APPROVED', 'PENDING_APPROVAL'].includes(r.status), 'This leave request has already been processed by another approver.', 409);
+      const note = D.reason(v.reason),
+        own = r.employee_id === a.id,
+        status = r.status === 'APPROVED' && own ? 'CANCELLATION_REQUESTED' : 'CANCELLED',
+        restored = r.is_paid && r.status === 'APPROVED' && status === 'CANCELLED' ? r.days : 0;
+      if (restored) await run('UPDATE leave_balances SET used=used-?,version=version+1 WHERE employee_id=? AND type_id=? AND year=?', restored, r.employee_id, r.type_id, r.year);
+      if (status === 'CANCELLED') await run('DELETE FROM leave_absence WHERE request_id=?', r.id);
+      await run('UPDATE leave_requests SET status=?,decision_note=?,version=version+1 WHERE id=?', status, note, r.id);
+      await log(a, 'LEAVE_' + status, r.id, {
+        note,
+        restored
+      });
+      const saved = await get('SELECT * FROM leave_requests WHERE id=?', id);
+      await event(saved, 'LEAVE_' + status);
+      if (status === 'CANCELLATION_REQUESTED') await event(saved, 'LEAVE_REVIEW', true);
+      return await success(saved, status === 'CANCELLED' ? 'cancelled' : 'cancellation requested', restored ? `${restored} day(s) restored.` : r.status === 'PENDING_APPROVAL' ? 'Reserved days released.' : 'Balance stays used until cancellation is approved.');
+    });
+  }
+  const money = (v, name) => {
+    const x = Number(v ?? 0);
+    check(Number.isFinite(x) && x >= 0 && x <= 10000000, 'Enter a valid ' + name + '.');
+    return Math.round(x * 100) / 100;
+  };
+  async function calculation(id, year, month, v) {
+    const emp = await person(id);
+    check(emp && emp.active, 'Choose an active employee.');
+    const period = `${year}-${String(month).padStart(2, '0')}`,
+      p = await policyAt(period + '-01'),
+      rows = await all('SELECT * FROM attendance WHERE employee_id=? AND date LIKE ? ORDER BY date', id, period + '%'),
+      corrections = await all("SELECT * FROM corrections WHERE employee_id=? AND date LIKE ? AND status='PENDING_REVIEW' ORDER BY id", id, period + '%'),
+      leaves = (await requests()).filter(r => r.employee_id === id && ['APPROVED', 'CANCELLATION_REQUESTED'].includes(r.status)),
+      pendingLeaves = (await requests()).filter(r => r.employee_id === id && pending.includes(r.status) && r.dates.some(d => d.startsWith(period))),
+      records = rows.map(record);
+    for (const c of corrections) records.filter(r => r.date === c.date).forEach(r => r.correctionStatus = 'PENDING_REVIEW');
+    const excludedDates = new Set(leaves.flatMap(r => r.dates));
+    const schedules = await weekend(),
+      holidayDates = new Set((await holidays()).map(h => h.date));
+    const late = P.monthly({
+        employeeId: id,
+        records,
+        month,
+        year,
+        shift: emp.shift,
+        policy: p,
+        isOff: day => D.weekOff(day, schedules) || holidayDates.has(day),
+        excludedDates,
+        now: now()
+      }),
+      days = new Date(year, month, 0).getDate(),
+      lost = (() => {
+        const daily = new Map();
+        for (const r of leaves.filter(r => !r.is_paid)) for (const day of r.dates.filter(d => d.startsWith(period))) daily.set(day, Math.min(1, (daily.get(day) || 0) + (r.day_type === 'FULL' ? 1 : .5)));
+        return [...daily.values()].reduce((a, b) => a + b, 0);
+      })(),
+      gross = money(v.gross ?? emp.monthly_gross, 'monthly gross'),
+      bonus = money(v.bonus, 'bonus'),
+      reimbursement = money(v.reimbursement, 'reimbursement'),
+      other = Object.fromEntries(['pfEmployee', 'pfEmployer', 'esic', 'professionalTax', 'tds', 'otherDeduction'].map(k => [k, money(v[k], k)])),
+      lwpDeduction = Math.round(gross * lost / days * 100) / 100,
+      lateDays = Math.min(late.deductionDays, days - lost),
+      lateDeduction = Math.round(gross * lateDays / days * 100) / 100,
+      totalEarnings = Math.round((gross + bonus + reimbursement) * 100) / 100,
+      totalDeductions = Math.round((lwpDeduction + lateDeduction + other.pfEmployee + other.esic + other.professionalTax + other.tds + other.otherDeduction) * 100) / 100,
+      net = Math.round((totalEarnings - totalDeductions) * 100) / 100;
+    check(net >= 0, 'Deductions cannot exceed earnings.');
+    const company = await get('SELECT * FROM company_settings WHERE id=1'),
+      structure = emp.structure_id ? await get('SELECT * FROM salary_structures WHERE id=?', emp.structure_id) : null,
+      basic = structure ? Math.round(gross * structure.basic_pct) / 100 : 0,
+      hra = structure ? Math.round(gross * structure.hra_pct) / 100 : 0,
+      components = structure ? [['Basic', basic], ['HRA', hra], ['Special allowance', Math.round((gross - basic - hra) * 100) / 100]] : null;
+    const snapshot = {
+      companyName: company?.name || 'Digi Rathi',
+      companyAddress: company?.address || '',
+      structureName: structure?.name || null,
+      components,
+      employeeName: emp.name,
+      employeeId: id,
+      designation: emp.designation,
+      department: emp.department,
+      year,
+      month,
+      gross,
+      bonus,
+      reimbursement,
+      ...other,
+      days,
+      lwpDays: lost,
+      lateDays,
+      lateDeduction,
+      lwpDeduction,
+      totalEarnings,
+      totalDeductions,
+      net,
+      payableDays: Math.max(0, days - lost - lateDays),
+      unresolved: corrections.length + rows.filter(r => !r.check_out).length + pendingLeaves.length,
+      formula: 'Monthly gross / calendar days × loss-of-pay days',
+      policyVersion: p.version,
+      reviewedStatutory: v.reviewedStatutory === true,
+      attendanceReviewed: v.attendanceReviewed === true
+    };
+    const signature = crypto.createHash('sha256').update(JSON.stringify({
+      emp,
+      company,
+      structure,
+      rows,
+      corrections,
+      pendingLeaves,
+      leaves: leaves.filter(r => r.dates.some(d => d.startsWith(period))),
+      p,
+      weekend: await weekend(),
+      holidays: await holidays()
+    })).digest('hex');
+    return {
+      snapshot,
+      signature
+    };
+  }
+  const slip = r => ({
+    ...r,
+    snapshot: JSON.parse(r.snapshot)
+  });
+  async function handle({
+    route,
+    method,
+    url,
+    a,
+    body,
+    reply
+  }) {
+    if (route === '/api/v1/notifications' && method === 'GET') {
+      reply(200, {
+        settings: await notifications.settings(),
+        emails: await notifications.list(a)
+      });
+      return true;
+    }
+    if (route === '/api/v1/notifications/settings' && method === 'PUT') {
+      sa(a);
+      const v = await body();
+      await tx(async () => {
+        await notifications.save(v);
+        await audit(a.id, 'NOTIFICATION_SETTINGS_CHANGED', 'company', await notifications.settings());
+      });
+      reply(200, await notifications.settings());
+      return true;
+    }
+    const retry = route.match(/^\/api\/v1\/notifications\/([^/]+)\/retry$/);
+    if (retry && method === 'POST') {
+      sa(a);
+      await body();
+      await tx(async () => {
+        await notifications.retry(retry[1]);
+        await audit(a.id, 'EMAIL_RETRIED', retry[1], {});
+      });
+      reply(200, {
+        success: true
+      });
+      return true;
+    }
+    if (route === '/api/v1/leave/requests' && method === 'POST') {
+      reply(201, await apply(a, await body()));
+      return true;
+    }
+    const action = route.match(/^\/api\/v1\/leave\/requests\/([^/]+)\/(decision|cancel)$/);
+    if (action && method === 'POST') {
+      reply(200, await (action[2] === 'decision' ? decide : cancel)(a, action[1], await body()));
+      return true;
+    }
+    if (route === '/api/admin/leave/policies' && method === 'PUT') {
+      sa(a);
+      const v = await body(),
+        p = validatePolicy(v),
+        note = D.reason(v.reason),
+        id = String(v.id || crypto.randomUUID());
+      await tx(async () => {
+        const old = await get('SELECT * FROM leave_types WHERE id=?', id);
+        check((old?.version || 0) === Number(v.version), 'This policy changed. Refresh before saving.', 409);
+        check(!(await types()).some(t => t.id !== id && t.code === p.code), 'This leave code already exists.');
+        await run('INSERT INTO leave_types(id,payload) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET payload=excluded.payload,version=leave_types.version+1', id, JSON.stringify(p));
+        await log(a, old ? 'LEAVE_POLICY_CHANGED' : 'LEAVE_TYPE_CREATED', id, {
+          policy: p,
+          note
+        });
+      });
+      reply(200, {
+        success: true
+      });
+      return true;
+    }
+    if (route === '/api/admin/leave/assign' && method === 'POST') {
+      sa(a);
+      const v = await body(),
+        p = (await types()).find(t => t.id === v.typeId && t.active && t.isPaid),
+        year = Number(v.year),
+        note = D.reason(v.reason);
+      check(p, 'Choose an active paid policy.');
+      check(Number.isInteger(year) && year >= Number(today().slice(0, 4)) && year <= Number(today().slice(0, 4)) + 1, 'Choose the current or next calendar year.');
+      check(Array.isArray(v.employeeIds) && v.employeeIds.length > 0 && v.employeeIds.length <= 500, 'Select employees for policy assignment.');
+      const ids = [...new Set(v.employeeIds)];
+      let quota = p.leavesAllowedPerYear;
+      if (v.prorateFrom) {
+        const from = D.isoDate(v.prorateFrom);
+        check(from && from.slice(0, 4) === String(year), 'Proration date must be within the allocation year.');
+        quota = Math.floor(quota * ((Date.parse(`${year + 1}-01-01`) - Date.parse(from)) / (Date.parse(`${year + 1}-01-01`) - Date.parse(`${year}-01-01`))) * 2) / 2;
+      }
+      await tx(async () => {
+        check(v.policyVersion === p.version, 'Policy changed. Preview the assignment again.', 409);
+        for (const id of ids) {
+          check((await person(id))?.active, 'Selected employee is inactive or missing.');
+          const b = await balance(id, p.id, year);
+          check(Number(v.expectedVersions?.[id] ?? 0) === b.version, 'An employee balance changed. Refresh and preview again.', 409);
+          check(quota >= b.used + b.reserved, 'Annual quota cannot be lower than used and reserved leave.');
+          await run('INSERT INTO leave_balances(employee_id,type_id,year,opening) VALUES(?,?,?,?) ON CONFLICT(employee_id,type_id,year) DO UPDATE SET opening=excluded.opening,version=leave_balances.version+1', id, p.id, year, quota);
+          await log(a, 'POLICY_ASSIGNMENT', id, {
+            typeId: p.id,
+            year,
+            previousOpening: b.opening,
+            opening: quota,
+            available: quota - b.used - b.reserved,
+            note,
+            prorateFrom: v.prorateFrom || null
+          });
+        }
+      });
+      reply(200, {
+        success: true,
+        message: `Annual policy assigned to ${ids.length} employee(s). Opening quota ${quota} day(s); existing used and reserved days retained.`
+      });
+      return true;
+    }
+    if (route === '/api/v1/salary-slips/draft' && method === 'POST') {
+      sa(a);
+      const v = await body(),
+        year = Number(v.year),
+        month = Number(v.month);
+      check(Number.isInteger(year) && year >= 2020 && year <= 2100 && Number.isInteger(month) && month >= 1 && month <= 12, 'Choose a valid payroll cycle.');
+      check(`${year}-${String(month).padStart(2, '0')}` <= today().slice(0, 7), 'Future salary slips cannot be prepared.');
+      const id = await tx(async () => {
+        const existing = await get('SELECT * FROM salary_slips WHERE employee_id=? AND year=? AND month=?', v.employeeId, year, month);
+        check(!existing || existing.status === 'DRAFT', 'This salary slip is already finalized.', 409);
+        check(Number(v.version || 0) === (existing?.version || 0), 'This draft changed. Reload before saving.', 409);
+        const c = await calculation(v.employeeId, year, month, v),
+          id = existing?.id || crypto.randomUUID();
+        await run('INSERT INTO salary_slips(id,employee_id,year,month,snapshot,signature) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET snapshot=excluded.snapshot,signature=excluded.signature,version=salary_slips.version+1', id, v.employeeId, year, month, JSON.stringify(c.snapshot), c.signature);
+        await audit(a.id, 'SALARY_DRAFT_SAVED', id, {
+          employeeId: v.employeeId,
+          year,
+          month
+        });
+        return id;
+      });
+      reply(201, slip(await get('SELECT * FROM salary_slips WHERE id=?', id)));
+      return true;
+    }
+    const slipRoute = route.match(/^\/api\/v1\/salary-slips\/([^/]+)(\/finalize)?$/);
+    if (slipRoute) {
+      const r = await get('SELECT * FROM salary_slips WHERE id=?', slipRoute[1]);
+      check(r, 'Salary slip not found.', 404);
+      if (method === 'GET' && !slipRoute[2]) {
+        check(r.employee_id === a.id || D.canAdminister(a.role, a.id, await person(r.employee_id)), 'You cannot access this salary slip.', 403);
+        check(r.status === 'FINALIZED' || a.role === 'SUPER_ADMIN', 'This salary slip has not been published.', 403);
+        reply(200, slip(r));
+        return true;
+      }
+      if (method === 'POST' && slipRoute[2]) {
+        sa(a);
+        const v = await body();
+        await tx(async () => {
+          const current = await get('SELECT * FROM salary_slips WHERE id=?', r.id);
+          check(current.status === 'DRAFT' && current.version === Number(v.version), 'This salary slip changed or was already finalized.', 409);
+          const s = JSON.parse(current.snapshot),
+            fresh = await calculation(current.employee_id, current.year, current.month, s);
+          check(fresh.signature === current.signature, 'Attendance, leave, employee details or policies changed. Refresh and review this draft.', 409);
+          check(s.attendanceReviewed && s.reviewedStatutory, 'Review attendance and statutory deductions before finalizing.');
+          check(s.unresolved === 0, 'Resolve pending leave decisions, attendance corrections and missing clock-outs before finalizing.', 409);
+          await run("UPDATE salary_slips SET status='FINALIZED',version=version+1,finalized_at=?,finalized_by=? WHERE id=?", new Date(now()).toISOString(), a.id, r.id);
+          await audit(a.id, 'SALARY_SLIP_FINALIZED', r.id, {
+            employeeId: r.employee_id,
+            year: r.year,
+            month: r.month
+          });
+          await notifications.queue('payslip:' + r.id, 'PAYSLIP_READY', [await person(r.employee_id)], {
+            year: r.year,
+            month: r.month,
+            path: '/?view=payroll&slip=' + encodeURIComponent(r.id)
+          });
+        });
+        reply(200, {
+          success: true,
+          message: 'Salary slip finalized and locked. Employee email queued.'
+        });
+        return true;
+      }
+    }
+    return false;
+  }
+  return {
+    handle,
+    bootstrap,
+    fullLeave
+  };
+}
+export { createHR, policyDefaults };

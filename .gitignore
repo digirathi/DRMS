@@ -1,0 +1,30 @@
+# Dependencies and generated builds
+**/node_modules/
+**/.next/
+**/dist/
+**/coverage/
+**/*.tsbuildinfo
+# Private configuration and runtime data
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.supabase.example
+**/supabase.env
+/digi-rathi-hrms-website/data/
+**/*.sqlite*
+**/*.db
+**/*.db-wal
+**/*.db-shm
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.log
+**/supabase/.temp/
+**/supabase/.branches/
+# Local copies and editor files
+**/*backup*/
+**/.DS_Store
+**/Thumbs.db
+**/.vscode/
+**/.idea/
