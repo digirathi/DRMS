@@ -5,7 +5,7 @@ Verified 20/10/2026. Project: **digirathi-hrms**, Mumbai (`ap-south-1`), ref `rt
 
 ## Running the website
 
-Run `node server.js` using Node 24+, then open http://127.0.0.1:4174. The private `%LOCALAPPDATA%\DigiRathi\HRMS\supabase.env` selects Supabase. Create your own first Super Admin through the setup screen on this computer. No real accounts or example employees were created during installation. Explore demo stays separate from saved cloud records.
+Run `node server.js` using Node 24+, then open http://127.0.0.1:4174. The private `%LOCALAPPDATA%\DigiRathi\HRMS\supabase.env` selects Supabase. Create your own first Super Admin through the setup screen on this computer. No sample employees or HR transactions are created. The initial Super Admin is provisioned privately and must replace the temporary password before accessing the dashboard.
 
 Supabase provides Postgres, native Auth, private Storage, the `hrms-api` Edge Function and the scheduled reminder producer. The Node server still serves the website and handles Gmail delivery. Deploying only the static HTML is insufficient. Keep Node online for website access and email delivery; cloud records survive a Node restart. The website is currently local, not publicly deployed.
 
@@ -35,14 +35,18 @@ The private configuration is stored outside the project at `%LOCALAPPDATA%\DigiR
 
 ## Database/deployment source
 
-`supabase/migrations/20261020073401_hrms_cloud_backend.sql` and `20261020074118_hrms_explicit_client_guards.sql` match the applied remote migration versions. `supabase/functions/hrms-api` contains the deployed Edge sources; dependencies are pinned. No CLI build dependencies are needed by Node. Do not replay the existing migrations against the live database blindly.
+`supabase/migrations/20261020073401_hrms_cloud_backend.sql` and `20261020074121_hrms_explicit_client_guards.sql` match the applied remote migration versions. `supabase/functions/hrms-api` contains the deployed Edge sources; dependencies are pinned. No CLI build dependencies are needed by Node. Do not replay the existing migrations against the live database blindly.
 
 To inspect application data in SQL Editor, choose/use `hrms_private`; it is deliberately not exposed in the public REST API. Restore production data only from reviewed backups, preserving Auth identities and encryption secrets. The original local SQLite database and changed source are backed up alongside the project before cutover. No local employee records existed at cutover, so no employee-data migration was needed. Switching providers later does not automatically synchronize the two databases.
 
 ## Verification
 
-118 automated tests pass, including disposable cloud-API fixtures, ownership/HR restrictions, first-login and recovery, quota restoration, payroll snapshot and stale-draft checks, upload validation, gateway origin/host checks and cloud-outage behavior. Separate live Postgres rollback tests checked table privacy, immutable records, numeric arithmetic and February/India-time reminder deduplication. Live gateway smoke checks confirmed database/Auth health, anonymous rejection, setup readiness and private Data API denial. UI checks covered directory, settings, support, payroll and reports with mobile/light and dark layouts.
+121 automated tests pass, including disposable cloud-API fixtures, ownership/HR restrictions, first-login and recovery, quota restoration, payroll snapshot and stale-draft checks, upload validation, gateway origin/host checks and cloud-outage behavior. Separate live Postgres rollback tests checked table privacy, immutable records, numeric arithmetic and February/India-time reminder deduplication. Live gateway smoke checks confirmed database/Auth health, anonymous rejection, setup readiness and private Data API denial. UI checks covered directory, settings, support, payroll and reports with mobile/light and dark layouts.
 
 The Supabase security advisor returned **no findings** on 20/10/2026. The empty database's unused-index INFO notices are expected before real activity; keep permission/lookup indexes and reassess after workload measurement. [Unused index guidance](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index).
 
 Before public production use, set a real URL/Gmail sender, arrange database backups suitable for the Free plan, monitor quotas, review HTTPS/proxy settings and exercise a real employee onboarding with their consent. Free-plan limits or inactivity pausing can affect availability; the implementation does not promise an uptime SLA.
+
+## Fresh installation update
+
+Demo sign-in, employee/payroll seeds, sample attendance/leave/assets/tickets, the disconnected React scaffold and duplicate source snapshots are removed. Unique login IDs are stored in the private accounts table; first sign-in and Settings can change your own login ID. Normal credential changes verify the current password and revoke all previous app sessions. The ccount_login_credentials migration was applied after the two original migrations. Initial credentials are kept out of source control. Disposable test fixtures remain in tests only.

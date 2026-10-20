@@ -28,25 +28,11 @@ const HIST_ICONS = {
 
 const appState = {
 
-  role: "Super Admin",
+  role: "Employee",
 
   backendConnected: false,
 
-  backendPermissions: [
-
-    "EMPLOYEE_READ", "EMPLOYEE_CREATE", "EMPLOYEE_UPDATE", "EMPLOYEE_DELETE",
-
-    "ATTENDANCE_READ_SELF", "ATTENDANCE_READ_TEAM", "ATTENDANCE_READ_ALL", "ATTENDANCE_MANUAL_OVERRIDE",
-
-    "LEAVE_APPLY", "LEAVE_READ_TEAM", "LEAVE_READ_ALL", "LEAVE_APPROVE", "LEAVE_APPROVE_ALL",
-
-    "PAYROLL_READ", "PAYROLL_GENERATE", "PAYROLL_FINALIZE",
-
-    "DOCUMENT_READ_SELF", "DOCUMENT_READ_ALL", "DOCUMENT_GENERATE",
-
-    "ASSET_ASSIGN", "REPORT_EXPORT", "SETTINGS_UPDATE", "DEPARTMENT_CREATE", "DEPARTMENT_UPDATE", "DEPARTMENT_ARCHIVE", "DEPARTMENT_DELETE"
-
-  ],
+  backendPermissions: [],
 
   backendUser: null,
 
@@ -113,7 +99,7 @@ const appState = {
 
   },
 
-  officeSettings: { requireGps: false, requireIp: false, lat: 28.6139, lng: 77.2090, ips: [], radiusMeters: 150, maxAccuracyMeters: 100 },
+  officeSettings: { requireGps: false, requireIp: false, lat: 0, lng: 0, ips: [], radiusMeters: 150, maxAccuracyMeters: 100 },
 
   attendanceHistory: []
 
@@ -121,19 +107,7 @@ const appState = {
 
 
 
-const employees = [
-
-  { backendId: 1, id: "DR-001", name: "Demo Person 23", dept: "Management", designation: "CEO", role: "Super Admin", manager: "-", status: "Active", attendance: "Office", shift: "09:00 AM - 06:00 PM", checkInTime: "08:50 AM", lateDays: 4 },
-
-  { backendId: 2, id: "DR-002", name: "Demo Person 01", dept: "Engineering", designation: "Software Engineer", role: "Employee", manager: "Demo Person 23 (DR-001)", status: "Active", attendance: "WFH", shift: "09:00 AM - 06:00 PM", checkInTime: "08:45 AM", lateDays: 1 },
-
-  { backendId: 3, id: "DR-003", name: "Demo Person 02", dept: "HR", designation: "HR Manager", role: "HR Admin", manager: "Demo Person 23 (DR-001)", status: "Active", attendance: "Late", shift: "09:00 AM - 06:00 PM", checkInTime: "09:45 AM", lateDays: 5 },
-
-  { backendId: 4, id: "DR-004", name: "Demo Person 03", dept: "Engineering", designation: "Frontend Developer", role: "Employee", manager: "Demo Person 01 (DR-002)", status: "Active", attendance: "Not Started", shift: "10:00 AM - 07:00 PM", checkInTime: null, checkOutTime: null, lateDays: 0 },
-
-  { backendId: 5, id: "DR-005", name: "Demo Person 22", dept: "HR", designation: "HR Executive", role: "Employee", manager: "Demo Person 02 (DR-003)", status: "Active", attendance: "Not Started", shift: "09:00 AM - 06:00 PM", checkInTime: null, lateDays: 0 }
-
-];
+const employees = [];
 
 
 
@@ -189,7 +163,7 @@ const roleDashboards = {
 
   "Super Admin": {
 
-    title: "Good morning, Demo Person 23",
+    title: "Your people workspace",
 
     summary: ["Total Employees", "Present Today", "Pending Leaves", "Payroll Status", "Late Today", "Absent Today", "WFH Today", "In Office Today"],
 
@@ -366,13 +340,7 @@ function init() {
 
   updateThemeIcon();
 
-  if (window.location.search.includes("mock=true") || window.location.search.includes("bypass=1") || window.location.hash.includes("preview")) {
-
-    bypassLoginWithMock();
-
-    return;
-
-  }
+  
 
   if (window.location.protocol === "file:") {
 
@@ -426,7 +394,7 @@ async function connectBackend() {
 
     if (appState.isMockBypass) return;
 
-    showLogin(error.message === "Please login again." ? "Sign in with your official account." : "The HRMS backend is not connected. Use Explore demo to preview the website.", false);
+    showLogin(error.message === "Please login again." ? "Sign in with your official account." : "The HRMS backend is not connected. Sign in to access your workspace.", false);
 
   }
 
@@ -1088,219 +1056,7 @@ async function submitLogin(event) {
 
 
 
-window.bypassLoginWithMock = async function bypassLoginWithMock() {
 
-  try {
-
-    appState.isMockBypass = true;
-
-    appState.backendConnected = false;
-
-    appState.backendPermissions = [
-
-      "EMPLOYEE_READ", "EMPLOYEE_CREATE", "EMPLOYEE_UPDATE", "EMPLOYEE_DELETE",
-
-      "ATTENDANCE_READ_SELF", "ATTENDANCE_READ_TEAM", "ATTENDANCE_READ_ALL", "ATTENDANCE_MANUAL_OVERRIDE",
-
-      "LEAVE_APPLY", "LEAVE_READ_TEAM", "LEAVE_READ_ALL", "LEAVE_APPROVE", "LEAVE_APPROVE_ALL",
-
-      "PAYROLL_READ", "PAYROLL_GENERATE", "PAYROLL_FINALIZE",
-
-      "DOCUMENT_READ_SELF", "DOCUMENT_READ_ALL", "DOCUMENT_GENERATE",
-
-      "ASSET_ASSIGN", "REPORT_EXPORT", "SETTINGS_UPDATE", "DEPARTMENT_CREATE", "DEPARTMENT_UPDATE", "DEPARTMENT_ARCHIVE", "DEPARTMENT_DELETE"
-
-    ];
-
-    appState.backendUser = {
-
-      userId: 1,
-
-      employeeId: "DR-001",
-
-      displayName: "Demo Person 23",
-
-      email: "demo01@example.test",
-
-      employeeCode: "DR-001",
-
-      initials: "R",
-
-      roles: ["SUPER_ADMIN"]
-
-    };
-
-    appState.role = "Super Admin";
-
-    if (typeof leaveStore !== "undefined") leaveStore.userRole = "SUPER_ADMIN";
-
-    appState.csrfHeader = "X-CSRF-TOKEN";
-
-    appState.csrfToken = "mock-csrf-token";
-
-
-
-    employees.splice(0, employees.length);
-
-    employees.push(
-
-      { backendId: 1, id: "DR-001", name: "Demo Person 23", dept: "Management", designation: "CEO", role: "Super Admin", manager: "-", status: "Active", attendance: "Office", shift: "09:00 AM - 06:00 PM", checkInTime: "08:50 AM", lateDays: 4 },
-
-      { backendId: 2, id: "DR-002", name: "Demo Person 01", dept: "Engineering", designation: "Software Engineer", role: "Employee", manager: "Demo Person 23 (DR-001)", status: "Active", attendance: "WFH", shift: "09:00 AM - 06:00 PM", checkInTime: "08:45 AM", lateDays: 1 },
-
-      { backendId: 3, id: "DR-003", name: "Demo Person 02", dept: "HR", designation: "HR Manager", role: "HR Admin", manager: "Demo Person 23 (DR-001)", status: "Active", attendance: "Late", shift: "09:00 AM - 06:00 PM", checkInTime: "09:45 AM", lateDays: 5 },
-
-      { backendId: 4, id: "DR-004", name: "Demo Person 03", dept: "Engineering", designation: "Frontend Developer", role: "Employee", manager: "Demo Person 01 (DR-002)", status: "Active", attendance: "Not Started", shift: "10:00 AM - 07:00 PM", checkInTime: null, checkOutTime: null, lateDays: 0 },
-
-      { backendId: 5, id: "DR-005", name: "Demo Person 22", dept: "HR", designation: "HR Executive", role: "Employee", manager: "Demo Person 02 (DR-003)", status: "Active", attendance: "Not Started", shift: "09:00 AM - 06:00 PM", checkInTime: null, lateDays: 0 }
-
-    );
-
-
-
-    appState.officeSettings = { requireGps: false, requireIp: false, lat: 28.6139, lng: 77.2090, ips: [], radiusMeters: 150, maxAccuracyMeters: 100 };
-
-
-
-    // Pre-populate mock attendance history for Demo Person 23 (DR-001)
-
-    appState.attendanceHistory = [
-
-      ["22 Jul 2026", "Office", "08:50 AM", "06:00 PM", evaluateHistoryStatus("08:50 AM", "06:00 PM"), "09:10", actionsCell([actionButton("Details", "scaffoldAction('View session details')")])],
-
-      ["21 Jul 2026", "Office", "09:40 AM", "06:00 PM", evaluateHistoryStatus("09:40 AM", "06:00 PM"), "08:20", actionsCell([actionButton("Details", "scaffoldAction('View session details')")])],
-
-      ["20 Jul 2026", "WFH", "08:45 AM", "06:00 PM", evaluateHistoryStatus("08:45 AM", "06:00 PM"), "09:15", actionsCell([actionButton("Details", "scaffoldAction('View session details')")])],
-
-      ["17 Jul 2026", "Office", "09:35 AM", "06:00 PM", evaluateHistoryStatus("09:35 AM", "06:00 PM"), "08:25", actionsCell([actionButton("Details", "scaffoldAction('View session details')")])],
-
-      ["16 Jul 2026", "Office", "09:45 AM", "05:00 PM", evaluateHistoryStatus("09:45 AM", "05:00 PM"), "07:15", actionsCell([actionButton("Details", "scaffoldAction('View session details')")])],
-
-      ["15 Jul 2026", "Office", "09:50 AM", "06:00 PM", evaluateHistoryStatus("09:50 AM", "06:00 PM"), "08:10", actionsCell([actionButton("Details", "scaffoldAction('View session details')")])]
-
-    ];
-
-
-
-    // Pre-populate finalized payroll run
-
-    appState.payrollRuns = [
-
-      {
-
-        id: 1,
-
-        payrollMonth: 7,
-
-        payrollYear: 2026,
-
-        status: "FINALIZED",
-
-        items: [
-
-          { id: 101, employeeId: "DR-001", employee: "Demo Person 23", basicSalary: 32000, hra: 12800, specialAllowance: 7000, overtimePay: 1200, lwpDeduction: 0, lateDeduction: 1067, manualDeduction: 500, grossSalary: 53000, netSalary: 51433 },
-
-          { id: 102, employeeId: "DR-002", employee: "Demo Person 01", basicSalary: 37500, hra: 15000, specialAllowance: 8000, overtimePay: 1450, lwpDeduction: 0, lateDeduction: 0, manualDeduction: 500, grossSalary: 61950, netSalary: 61450 },
-
-          { id: 103, employeeId: "DR-003", employee: "Demo Person 02", basicSalary: 43000, hra: 17200, specialAllowance: 9000, overtimePay: 1700, lwpDeduction: 1800, lateDeduction: 1433, manualDeduction: 500, grossSalary: 70900, netSalary: 67167 },
-
-          { id: 104, employeeId: "DR-004", employee: "Demo Person 03", basicSalary: 48500, hra: 19400, specialAllowance: 10000, overtimePay: 1950, lwpDeduction: 0, lateDeduction: 0, manualDeduction: 500, grossSalary: 79850, netSalary: 79350 }
-
-        ]
-
-      }
-
-    ];
-
-
-
-    // Pre-populate company holiday list
-
-    const year = new Date().getFullYear();
-
-    appState.companyHolidays = [
-
-      { date: `${year}-01-26`, name: "Republic Day", type: "National" },
-
-      { date: `${year}-04-14`, name: "Ambedkar Jayanti", type: "National" },
-
-      { date: `${year}-04-22`, name: "Eid ul-Fitr", type: "National" },
-
-      { date: `${year}-05-01`, name: "Labour Day", type: "National" },
-
-      { date: `${year}-08-15`, name: "Independence Day", type: "National" },
-
-      { date: `${year}-08-28`, name: "Raksha Bandhan", type: "Regional" },
-
-      { date: `${year}-10-02`, name: "Gandhi Jayanti", type: "National" },
-
-      { date: `${year}-10-20`, name: "Dussehra", type: "Regional" },
-
-      { date: `${year}-11-01`, name: "Diwali", type: "Regional" },
-
-      { date: `${year}-12-25`, name: "Christmas", type: "National" }
-
-    ];
-
-
-
-    // Pre-populate sample leave requests
-
-    appState.leaveRequests = [
-
-      ["Casual Leave", "21 Jul - 22 Jul 2026", "2 day(s)", `<span class="status warning">Pending</span>`, "Demo Person 01", "DR-002"],
-
-      ["Sick Leave", "18 Jul 2026", "1 day(s)", `<span class="status success">Approved</span>`, "Demo Person 02", "DR-003"]
-
-    ];
-
-
-
-    appState.departments = [
-
-      { id: 1, name: "Management", code: "MGMT", description: "Executive administration", parent: "None", head: "Demo Person 23", employees: 1, status: "Active", created: "01 Jan 2026" },
-
-      { id: 2, name: "Engineering", code: "ENG", description: "Product development", parent: "Management", head: "Demo Person 01", employees: 2, status: "Active", created: "01 Jan 2026" },
-
-      { id: 3, name: "HR", code: "HRD", description: "Human resources", parent: "Management", head: "Demo Person 02", employees: 2, status: "Active", created: "01 Jan 2026" }
-
-    ];
-
-
-
-    document.body.classList.remove("auth-pending");
-
-    document.body.classList.add("authenticated");
-
-    const authScreen = $("#authScreen");
-
-    if (authScreen) authScreen.hidden = true;
-
-    if (window.prepareDemoData) window.prepareDemoData();
-    updateProfile();
-    renderAll();
-    setView("dashboard");
-    showToast("Demo workspace opened. Changes are temporary.", "info");
-
-  } catch (err) {
-
-    console.error("Bypass error:", err);
-
-    document.body.classList.remove("auth-pending");
-
-    document.body.classList.add("authenticated");
-
-    const authScreen = $("#authScreen");
-
-    if (authScreen) authScreen.hidden = true;
-
-    renderAll();
-
-    setView("dashboard");
-
-  }
-
-}
 
 
 
@@ -1622,99 +1378,7 @@ function returnToSignIn() {
 
 async function apiRequest(path, options = {}) {
 
-  if (appState.csrfToken === "mock-csrf-token") {
-
-    if (path.includes("/clock-in")) {
-
-      const mode = options.body ? JSON.parse(options.body).mode : "OFFICE";
-
-      return { checkInAt: new Date().toISOString(), mode };
-
-    }
-
-    if (path.includes("/clock-out")) {
-
-      return { checkInAt: appState.clockInTime ? new Date(appState.clockInTime).toISOString() : null, checkOutAt: new Date().toISOString(), mode: appState.wfh ? 'WFH' : 'OFFICE' };
-
-    }
-
-    if (path.includes("/today")) {
-
-      return { checkInAt: appState.clockInTime ? new Date(appState.clockInTime).toISOString() : null, checkOutAt: appState.clockOutTime ? new Date(appState.clockOutTime).toISOString() : null, mode: appState.wfh ? 'WFH' : 'OFFICE' };
-
-    }
-
-    if (path.includes("/payroll/generate")) {
-
-      return { id: 1, payrollMonth: 7, payrollYear: 2026, status: "DRAFT" };
-
-    }
-
-    if (path.includes("/preview")) {
-
-      return {
-
-        id: 1,
-
-        payrollMonth: 7,
-
-        payrollYear: 2026,
-
-        status: "DRAFT",
-
-        items: [
-
-          { id: 101, employeeId: "DR-001", employee: "Demo Person 23", basicSalary: 32000, hra: 12800, specialAllowance: 7000, overtimePay: 1200, lwpDeduction: 0, lateDeduction: 1067, manualDeduction: 500, grossSalary: 53000, netSalary: 51433 },
-
-          { id: 102, employeeId: "DR-002", employee: "Demo Person 01", basicSalary: 37500, hra: 15000, specialAllowance: 8000, overtimePay: 1450, lwpDeduction: 0, lateDeduction: 0, manualDeduction: 500, grossSalary: 61950, netSalary: 61450 },
-
-          { id: 103, employeeId: "DR-003", employee: "Demo Person 02", basicSalary: 43000, hra: 17200, specialAllowance: 9000, overtimePay: 1700, lwpDeduction: 1800, lateDeduction: 1433, manualDeduction: 500, grossSalary: 70900, netSalary: 67167 },
-
-          { id: 104, employeeId: "DR-004", employee: "Demo Person 03", basicSalary: 48500, hra: 19400, specialAllowance: 10000, overtimePay: 1950, lwpDeduction: 0, lateDeduction: 0, manualDeduction: 500, grossSalary: 79850, netSalary: 79350 }
-
-        ]
-
-      };
-
-    }
-
-    if (path.includes("/finalize")) {
-
-      return {
-
-        id: 1,
-
-        payrollMonth: 7,
-
-        payrollYear: 2026,
-
-        status: "FINALIZED",
-
-        items: [
-
-          { id: 101, employeeId: "DR-001", employee: "Demo Person 23", basicSalary: 32000, hra: 12800, specialAllowance: 7000, overtimePay: 1200, lwpDeduction: 0, lateDeduction: 1067, manualDeduction: 500, grossSalary: 53000, netSalary: 51433 },
-
-          { id: 102, employeeId: "DR-002", employee: "Demo Person 01", basicSalary: 37500, hra: 15000, specialAllowance: 8000, overtimePay: 1450, lwpDeduction: 0, lateDeduction: 0, manualDeduction: 500, grossSalary: 61950, netSalary: 61450 },
-
-          { id: 103, employeeId: "DR-003", employee: "Demo Person 02", basicSalary: 43000, hra: 17200, specialAllowance: 9000, overtimePay: 1700, lwpDeduction: 1800, lateDeduction: 1433, manualDeduction: 500, grossSalary: 70900, netSalary: 67167 },
-
-          { id: 104, employeeId: "DR-004", employee: "Demo Person 03", basicSalary: 48500, hra: 19400, specialAllowance: 10000, overtimePay: 1950, lwpDeduction: 0, lateDeduction: 0, manualDeduction: 500, grossSalary: 79850, netSalary: 79350 }
-
-        ]
-
-      };
-
-    }
-
-    if (path.includes("/payslips")) {
-
-      return { generated: 4 };
-
-    }
-
-    throw new Error("This action is not connected in the demo. No changes were saved.");
-
-  }
+  
 
 
 
@@ -1738,7 +1402,7 @@ async function apiRequest(path, options = {}) {
 
   } catch (error) {
 
-    throw new Error("The HRMS backend is not connected. Use Explore demo to preview the website.");
+    throw new Error("The HRMS backend is not connected. Sign in to access your workspace.");
 
   }
 
@@ -3853,307 +3517,24 @@ function renderAttendance() {
 
 
 
-const initialLeaveTypesData = [
-  {
-    id: "lt-sick",
-    name: "Sick Leave",
-    shortName: "SL",
-    code: "SL",
-    description: "This is a default description for the Leave Type. You can customise this.",
-    isPaid: true,
-    isActive: true,
-    displayColor: "#ec4899",
-    leavesAllowedPerYear: 8.0,
-    annualAllocation: 8.0,
-    weekendsBetweenLeave: "NOT_CONSIDERED",
-    holidaysBetweenLeave: "NOT_CONSIDERED",
-    creditableOnAccrualBasis: false,
-    accrualFrequency: "YEARLY",
-    accrualAmount: 0,
-    allowedUnderProbation: true,
-    allowedUnderNoticePeriod: false,
-    encashmentEnabled: false,
-    encashmentMinBalance: 0,
-    encashmentMaxDays: 0,
-    carryForwardEnabled: false,
-    maximumCarryForward: 0,
-    carryForwardExpiryDays: 0,
-    maxLeavesAllowedInMonth: 8.00,
-    continuousLeavesAllowed: 8,
-    negativeLeavesAllowed: true,
-    negativeBalanceLimit: -2,
-    futureDatedLeavesAllowed: true,
-    futureDatedAllowedAfterDays: 0,
-    backdatedLeavesAllowed: true,
-    backdatedAllowedUpToDays: 15,
-    applyLeavesForNextYearTill: ""
-  },
-  {
-    id: "lt-casual",
-    name: "Casual Leave",
-    shortName: "CL",
-    code: "CL",
-    description: "Annual lump-sum leave for personal matters and unexpected tasks.",
-    isPaid: true,
-    isActive: true,
-    displayColor: "#6366f1",
-    leavesAllowedPerYear: 12.0,
-    annualAllocation: 12.0,
-    weekendsBetweenLeave: "NOT_CONSIDERED",
-    holidaysBetweenLeave: "NOT_CONSIDERED",
-    creditableOnAccrualBasis: false,
-    accrualFrequency: "YEARLY",
-    accrualAmount: 0,
-    allowedUnderProbation: true,
-    allowedUnderNoticePeriod: false,
-    encashmentEnabled: false,
-    encashmentMinBalance: 0,
-    encashmentMaxDays: 0,
-    carryForwardEnabled: true,
-    maximumCarryForward: 5,
-    carryForwardExpiryDays: 90,
-    maxLeavesAllowedInMonth: 3.00,
-    continuousLeavesAllowed: 3,
-    negativeLeavesAllowed: false,
-    negativeBalanceLimit: 0,
-    futureDatedLeavesAllowed: true,
-    futureDatedAllowedAfterDays: 1,
-    backdatedLeavesAllowed: true,
-    backdatedAllowedUpToDays: 3,
-    applyLeavesForNextYearTill: "31 Dec"
-  },
-  {
-    id: "lt-earned",
-    name: "Earned Leave",
-    shortName: "EL",
-    code: "EL",
-    description: "Annual lump-sum privilege leave for planned long vacations.",
-    isPaid: true,
-    isActive: true,
-    displayColor: "#10b981",
-    leavesAllowedPerYear: 15.0,
-    annualAllocation: 15.0,
-    weekendsBetweenLeave: "CONSIDERED",
-    holidaysBetweenLeave: "CONSIDERED",
-    creditableOnAccrualBasis: false,
-    accrualFrequency: "YEARLY",
-    accrualAmount: 0,
-    allowedUnderProbation: false,
-    allowedUnderNoticePeriod: false,
-    encashmentEnabled: true,
-    encashmentMinBalance: 10,
-    encashmentMaxDays: 15,
-    carryForwardEnabled: true,
-    maximumCarryForward: 30,
-    carryForwardExpiryDays: 180,
-    maxLeavesAllowedInMonth: 15.00,
-    continuousLeavesAllowed: 15,
-    negativeLeavesAllowed: false,
-    negativeBalanceLimit: 0,
-    futureDatedLeavesAllowed: true,
-    futureDatedAllowedAfterDays: 7,
-    backdatedLeavesAllowed: false,
-    backdatedAllowedUpToDays: 0,
-    applyLeavesForNextYearTill: "31 Dec"
-  },
-  {
-    id: "lt-unpaid",
-    name: "Unpaid Leave / LWP",
-    shortName: "LWP",
-    code: "LWP",
-    description: "Leave without pay when paid quota is exhausted.",
-    isPaid: false,
-    isActive: true,
-    displayColor: "#f59e0b",
-    leavesAllowedPerYear: 30.0,
-    annualAllocation: 30.0,
-    weekendsBetweenLeave: "NOT_CONSIDERED",
-    holidaysBetweenLeave: "NOT_CONSIDERED",
-    creditableOnAccrualBasis: false,
-    accrualFrequency: "MONTHLY",
-    accrualAmount: 0,
-    allowedUnderProbation: true,
-    allowedUnderNoticePeriod: true,
-    encashmentEnabled: false,
-    encashmentMinBalance: 0,
-    encashmentMaxDays: 0,
-    carryForwardEnabled: false,
-    maximumCarryForward: 0,
-    carryForwardExpiryDays: 0,
-    maxLeavesAllowedInMonth: 30.00,
-    continuousLeavesAllowed: 30,
-    negativeLeavesAllowed: true,
-    negativeBalanceLimit: -30,
-    futureDatedLeavesAllowed: true,
-    futureDatedAllowedAfterDays: 2,
-    backdatedLeavesAllowed: true,
-    backdatedAllowedUpToDays: 5,
-    applyLeavesForNextYearTill: ""
-  },
-  {
-    id: "lt-comp-off",
-    name: "Compensatory Off",
-    shortName: "COMP",
-    code: "COMP",
-    description: "Credit leave awarded for working on weekends or holidays.",
-    isPaid: true,
-    isActive: true,
-    displayColor: "#8b5cf6",
-    leavesAllowedPerYear: 0.0,
-    annualAllocation: 0.0,
-    weekendsBetweenLeave: "NOT_CONSIDERED",
-    holidaysBetweenLeave: "NOT_CONSIDERED",
-    creditableOnAccrualBasis: false,
-    accrualFrequency: "MONTHLY",
-    accrualAmount: 0,
-    allowedUnderProbation: true,
-    allowedUnderNoticePeriod: true,
-    encashmentEnabled: false,
-    encashmentMinBalance: 0,
-    encashmentMaxDays: 0,
-    carryForwardEnabled: false,
-    maximumCarryForward: 0,
-    carryForwardExpiryDays: 0,
-    maxLeavesAllowedInMonth: 5.00,
-    continuousLeavesAllowed: 3,
-    negativeLeavesAllowed: false,
-    negativeBalanceLimit: 0,
-    futureDatedLeavesAllowed: true,
-    futureDatedAllowedAfterDays: 1,
-    backdatedLeavesAllowed: true,
-    backdatedAllowedUpToDays: 15,
-    applyLeavesForNextYearTill: ""
-  },
-  {
-    id: "lt-maternity",
-    name: "Maternity Leave",
-    shortName: "ML",
-    code: "ML",
-    description: "Statutory maternity leave for female employees.",
-    isPaid: true,
-    isActive: true,
-    displayColor: "#06b6d4",
-    leavesAllowedPerYear: 180.0,
-    annualAllocation: 180.0,
-    weekendsBetweenLeave: "CONSIDERED",
-    holidaysBetweenLeave: "CONSIDERED",
-    creditableOnAccrualBasis: false,
-    accrualFrequency: "YEARLY",
-    accrualAmount: 180,
-    allowedUnderProbation: true,
-    allowedUnderNoticePeriod: true,
-    encashmentEnabled: false,
-    encashmentMinBalance: 0,
-    encashmentMaxDays: 0,
-    carryForwardEnabled: false,
-    maximumCarryForward: 0,
-    carryForwardExpiryDays: 0,
-    maxLeavesAllowedInMonth: 180.00,
-    continuousLeavesAllowed: 180,
-    negativeLeavesAllowed: false,
-    negativeBalanceLimit: 0,
-    futureDatedLeavesAllowed: true,
-    futureDatedAllowedAfterDays: 30,
-    backdatedLeavesAllowed: false,
-    backdatedAllowedUpToDays: 0,
-    applyLeavesForNextYearTill: ""
-  },
-  {
-    id: "lt-paternity",
-    name: "Paternity Leave",
-    shortName: "PL",
-    code: "PL",
-    description: "Leave for new fathers upon child birth.",
-    isPaid: true,
-    isActive: true,
-    displayColor: "#3b82f6",
-    leavesAllowedPerYear: 15.0,
-    annualAllocation: 15.0,
-    weekendsBetweenLeave: "CONSIDERED",
-    holidaysBetweenLeave: "CONSIDERED",
-    creditableOnAccrualBasis: false,
-    accrualFrequency: "YEARLY",
-    accrualAmount: 15,
-    allowedUnderProbation: true,
-    allowedUnderNoticePeriod: true,
-    encashmentEnabled: false,
-    encashmentMinBalance: 0,
-    encashmentMaxDays: 0,
-    carryForwardEnabled: false,
-    maximumCarryForward: 0,
-    carryForwardExpiryDays: 0,
-    maxLeavesAllowedInMonth: 15.00,
-    continuousLeavesAllowed: 15,
-    negativeLeavesAllowed: false,
-    negativeBalanceLimit: 0,
-    futureDatedLeavesAllowed: true,
-    futureDatedAllowedAfterDays: 15,
-    backdatedLeavesAllowed: true,
-    backdatedAllowedUpToDays: 7,
-    applyLeavesForNextYearTill: ""
-  }
-];
+const initialLeaveTypesData = [];
 
 
 
 
-const initialLeaveRequestsData = [
-
-  { id: "lr-101", employeeId: "EMP001", employeeName: "Demo Person 13", employeeCode: "DR-1001", department: "Engineering", joiningDate: "2024-03-15", leaveTypeId: "lt-casual", leaveTypeName: "Casual Leave", isPaid: true, startDate: "2026-07-28", endDate: "2026-07-28", dayType: "FULL_DAY", totalDays: 1, currentBalance: 7, balanceAfterApp: 6, reason: "Personal errand and family dentist appointment.", handoverPerson: "Demo Person 21 (DR-1004)", handoverNote: "Priya will cover urgent hotfix PR reviews during the afternoon.", emergencyContact: "+91 98765 43210", attachmentName: "Appointment_Slip.pdf", status: "PENDING_APPROVAL", submittedAt: "2026-07-27T10:15:00Z", hasAttendanceConflict: false, hasOverlappingLeave: false },
-
-  { id: "lr-102", employeeId: "EMP002", employeeName: "Demo Person 14", employeeCode: "DR-1002", department: "Product", joiningDate: "2025-01-10", leaveTypeId: "lt-sick", leaveTypeName: "Sick Leave", isPaid: true, startDate: "2026-07-27", endDate: "2026-07-29", dayType: "FULL_DAY", totalDays: 3, currentBalance: 4, balanceAfterApp: 1, reason: "High fever and viral infection recommended rest by physician.", handoverPerson: "Karan Patel (DR-1008)", handoverNote: "Karan is leading the sprint planning meeting.", emergencyContact: "+91 98111 22334", attachmentName: "Doctor_Prescription.pdf", status: "APPROVED", submittedAt: "2026-07-26T08:30:00Z", processedByName: "Demo Person 15", processedByRole: "SUPER_ADMIN", processedAt: "2026-07-26T09:45:00Z", approvalNote: "Approved. Rest well and get healthy soon!", hasAttendanceConflict: false, hasOverlappingLeave: false },
-
-  { id: "lr-103", employeeId: "EMP003", employeeName: "Demo Person 16", employeeCode: "DR-1003", department: "Design", joiningDate: "2026-05-01", leaveTypeId: "lt-earned", leaveTypeName: "Earned Leave", isPaid: true, startDate: "2026-08-05", endDate: "2026-08-10", dayType: "FULL_DAY", totalDays: 6, currentBalance: 0, balanceAfterApp: -6, reason: "Planned vacation trip to Goa.", status: "REJECTED", submittedAt: "2026-07-25T14:20:00Z", processedByName: "Demo Person 15", processedByRole: "SUPER_ADMIN", processedAt: "2026-07-25T16:00:00Z", rejectionReason: "Earned leave is not available during probation period as per company policy.", hasAttendanceConflict: false, hasOverlappingLeave: true },
-
-  { id: "lr-104", employeeId: "EMP004", employeeName: "Demo Person 17", employeeCode: "DR-1004", department: "Engineering", joiningDate: "2023-11-01", leaveTypeId: "lt-casual", leaveTypeName: "Casual Leave", isPaid: true, startDate: "2026-07-30", endDate: "2026-07-30", dayType: "SECOND_HALF", totalDays: 0.5, currentBalance: 8, balanceAfterApp: 7.5, reason: "House relocation and utility technician visit.", status: "MORE_INFORMATION_REQUIRED", submittedAt: "2026-07-26T11:00:00Z", processedByName: "Demo Person 15", processedByRole: "SUPER_ADMIN", processedAt: "2026-07-26T14:10:00Z", moreInfoMessage: "Please specify your designated handover team member for the afternoon deployment.", hasAttendanceConflict: false, hasOverlappingLeave: false },
-
-  { id: "lr-105", employeeId: "EMP005", employeeName: "Demo Person 18", employeeCode: "DR-1005", department: "Human Resources", joiningDate: "2024-06-01", leaveTypeId: "lt-unpaid", leaveTypeName: "Unpaid Leave / LWP", isPaid: false, startDate: "2026-08-01", endDate: "2026-08-03", dayType: "FULL_DAY", totalDays: 3, currentBalance: 15, balanceAfterApp: 12, reason: "Attending higher education exams in hometown.", status: "PENDING_APPROVAL", submittedAt: "2026-07-27T09:00:00Z", hasAttendanceConflict: false, hasOverlappingLeave: false },
-
-  { id: "lr-106", employeeId: "EMP006", employeeName: "Demo Person 19", employeeCode: "DR-1006", department: "Sales", joiningDate: "2025-02-15", leaveTypeId: "lt-comp-off", leaveTypeName: "Compensatory Off", isPaid: true, startDate: "2026-07-29", endDate: "2026-07-29", dayType: "FULL_DAY", totalDays: 1, currentBalance: 2, balanceAfterApp: 1, reason: "Availing comp-off for working client pitch event on Sunday.", status: "CANCELLATION_REQUESTED", cancellationReason: "Client meeting rescheduled to 29th; need to work on this day.", submittedAt: "2026-07-24T10:00:00Z", processedByName: "Demo Person 15", processedByRole: "SUPER_ADMIN", processedAt: "2026-07-24T11:30:00Z", approvalNote: "Approved comp off.", hasAttendanceConflict: false, hasOverlappingLeave: false }
-
-];
+const initialLeaveRequestsData = [];
 
 
 
-const initialLeaveBalancesData = [
-
-  { id: "lb-1", employeeId: "EMP001", employeeName: "Demo Person 13", employeeCode: "DR-1001", department: "Engineering", leaveTypeId: "lt-casual", leaveTypeName: "Casual Leave", openingBalance: 12, refilled: 0, carriedForward: 2, used: 3, pending: 1, manuallyAdjusted: 0, availableBalance: 11, expiringBalance: 1 },
-
-  { id: "lb-2", employeeId: "EMP001", employeeName: "Demo Person 13", employeeCode: "DR-1001", department: "Engineering", leaveTypeId: "lt-sick", leaveTypeName: "Sick Leave", openingBalance: 8, refilled: 0, carriedForward: 0, used: 2, pending: 0, manuallyAdjusted: 1, availableBalance: 7, expiringBalance: 0 },
-
-  { id: "lb-3", employeeId: "EMP002", employeeName: "Demo Person 14", employeeCode: "DR-1002", department: "Product", leaveTypeId: "lt-sick", leaveTypeName: "Sick Leave", openingBalance: 8, refilled: 0, carriedForward: 0, used: 5, pending: 0, manuallyAdjusted: 0, availableBalance: 3, expiringBalance: 0 },
-
-  { id: "lb-4", employeeId: "EMP003", employeeName: "Demo Person 16", employeeCode: "DR-1003", department: "Design", leaveTypeId: "lt-earned", leaveTypeName: "Earned Leave", openingBalance: 15, refilled: 0, carriedForward: 0, used: 0, pending: 0, manuallyAdjusted: 0, availableBalance: 15, expiringBalance: 0 },
-
-  { id: "lb-5", employeeId: "EMP004", employeeName: "Demo Person 17", employeeCode: "DR-1004", department: "Engineering", leaveTypeId: "lt-casual", leaveTypeName: "Casual Leave", openingBalance: 12, refilled: 0, carriedForward: 1, used: 1.5, pending: 0.5, manuallyAdjusted: 0, availableBalance: 11.5, expiringBalance: 0 }
-
-];
+const initialLeaveBalancesData = [];
 
 
 
-const initialHolidaysData = [
-
-  { id: "hol-1", name: "Independence Day", date: "2026-08-15", dayType: "FULL_DAY", description: "National Holiday celebrating Indian Independence", recurringAnnually: true, isActive: true },
-
-  { id: "hol-2", name: "Mahatma Gandhi Jayanti", date: "2026-10-02", dayType: "FULL_DAY", description: "National Holiday commemorating Gandhi Jayanti", recurringAnnually: true, isActive: true },
-
-  { id: "hol-3", name: "Diwali / Deepavali", date: "2026-11-08", dayType: "FULL_DAY", description: "Festival of Lights national holiday", recurringAnnually: false, isActive: true },
-
-  { id: "hol-4", name: "Christmas Day", date: "2026-12-25", dayType: "FULL_DAY", description: "Christmas Celebration", recurringAnnually: true, isActive: true }
-
-];
+const initialHolidaysData = [];
 
 
 
-const initialAuditLogsData = [
-
-  { id: "lal-1", employeeId: "EMP001", employeeName: "Demo Person 13", action: "CREATE_REQUEST", performedBy: "Demo Person 13", userRole: "EMPLOYEE", reason: "Leave request submitted for 2026-07-28", ipAddress: "192.168.1.45", createdAt: "2026-07-27T10:15:00Z" },
-
-  { id: "lal-2", employeeId: "EMP002", employeeName: "Demo Person 14", action: "APPROVE_REQUEST", performedBy: "Demo Person 15", userRole: "SUPER_ADMIN", reason: "Approved sick leave request based on submitted prescription", ipAddress: "10.0.0.12", createdAt: "2026-07-26T09:45:00Z" },
-
-  { id: "lal-3", employeeId: "EMP003", employeeName: "Demo Person 16", action: "REJECT_REQUEST", performedBy: "Demo Person 15", userRole: "SUPER_ADMIN", reason: "Earned leave unavailable during probation period.", ipAddress: "10.0.0.12", createdAt: "2026-07-25T16:00:00Z" }
-
-];
+const initialAuditLogsData = [];
 
 
 
@@ -4393,47 +3774,7 @@ window.exportLeaveReportCSV = function() {
 
 
 
-window.switchActiveUserRole = function(newRole) {
-  if (!appState.isMockBypass) return;
-  const requestedRole = newRole;
-  newRole = HRDomain.accessRole(newRole);
-  appState.role = newRole;
-  if (newRole === "Super Admin") {
-    appState.backendUser = { userId: 1, email: "demo03@example.test", displayName: "Demo Person 23", employeeCode: "DR-001" };
-    appState.currentEmployee = employees[0];
-    leaveStore.userRole = "SUPER_ADMIN";
-  } else if (newRole === "HR Admin") {
-    appState.backendUser = { userId: 3, email: "demo04@example.test", displayName: "Demo Person 02", employeeCode: "DR-003" };
-    appState.currentEmployee = employees[2];
-    leaveStore.userRole = "HR_ADMIN";
-  } else if (HRDomain.adminRole(requestedRole) === "MANAGER") {
-    appState.backendUser = { userId: 2, email: "demo05@example.test", displayName: "Demo Person 01", employeeCode: "DR-002" };
-    appState.currentEmployee = employees[1];
-    leaveStore.userRole = "EMPLOYEE";
-  } else {
-    appState.backendUser = { userId: 4, email: "demo06@example.test", displayName: "Demo Person 03", employeeCode: "DR-004" };
-    appState.currentEmployee = employees[3];
-    leaveStore.userRole = "EMPLOYEE";
-  }
 
-  const selfPermissions = ["ATTENDANCE_READ_SELF", "ATTENDANCE_CLOCK", "LEAVE_APPLY", "DOCUMENT_READ_SELF"];
-  const adminPermissions = [...selfPermissions, "EMPLOYEE_READ", "ATTENDANCE_READ_TEAM", "LEAVE_READ_TEAM", "REPORT_EXPORT"];
-  appState.backendPermissions = newRole === "Employee" ? selfPermissions : [
-    ...adminPermissions, "EMPLOYEE_CREATE", "EMPLOYEE_UPDATE", "EMPLOYEE_DELETE", "ATTENDANCE_READ_ALL", "ATTENDANCE_MANUAL_OVERRIDE", "LEAVE_READ_ALL", "LEAVE_APPROVE", "LEAVE_APPROVE_ALL", "PAYROLL_READ", "PAYROLL_GENERATE", "PAYROLL_FINALIZE", "DOCUMENT_READ_ALL", "DOCUMENT_GENERATE", "ASSET_ASSIGN", "DEPARTMENT_CREATE", "DEPARTMENT_UPDATE", "DEPARTMENT_ARCHIVE", "DEPARTMENT_DELETE", ...(newRole === "Super Admin" ? ["SETTINGS_UPDATE"] : [])
-  ];
-  appState.checkedIn = false; appState.clockInTime = null; appState.clockOutTime = null;
-  const sel = document.getElementById("roleSelect");
-  if (sel) sel.value = newRole;
-
-  updateProfile();
-  renderAll();
-  setView(canAccess(appState.activeView) ? appState.activeView : "dashboard");
-  if (appState.activeView === "leave") renderLeave();
-  else if (appState.activeView === "attendance") renderAttendance();
-  else if (appState.activeView === "employees") renderEmployees();
-  refreshIcons();
-  showToast(`Switched active profile to ${newRole} (${currentUser().name})`, "info");
-};
 
 window.executeLeaveApprove = function(reqId) {
   const req = leaveStore.requests.find(r => r.id === reqId);
@@ -4480,7 +3821,7 @@ window.executeLeaveApprove = function(reqId) {
       performedBy: currentProcName,
       userRole: currentProcRole,
       reason: note || "Approved leave cancellation and restored balance",
-      ipAddress: "127.0.0.1",
+      ipAddress: null,
       createdAt: new Date().toISOString()
     });
 
@@ -4552,7 +3893,7 @@ window.executeLeaveApprove = function(reqId) {
     performedBy: currentProcName,
     userRole: currentProcRole,
     reason: note || "Approved leave request",
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
 
@@ -4607,7 +3948,7 @@ window.executeLeaveReject = function(reqId) {
       performedBy: currentProcName,
       userRole: currentProcRole,
       reason,
-      ipAddress: "127.0.0.1",
+      ipAddress: null,
       createdAt: new Date().toISOString()
     });
 
@@ -4634,7 +3975,7 @@ window.executeLeaveReject = function(reqId) {
     performedBy: currentProcName,
     userRole: currentProcRole,
     reason,
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
 
@@ -4716,7 +4057,7 @@ window.executeLeaveCancel = function(reqId, cancelReason) {
     performedBy: currentProcName,
     userRole: currentProcRole,
     reason: reason,
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
 
@@ -4768,7 +4109,7 @@ window.executeRequestInfo = function(reqId) {
     performedBy: currentUser().name,
     userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN",
     reason: msg,
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
 
@@ -5070,7 +4411,7 @@ window.executeAssignPolicySave = function(e) {
     performedBy: currentProcName,
     userRole: currentProcRole,
     reason: `${reason} (Assigned ${quota}d of ${lt.name} to ${selectedEmpIds.length} employees [${mode}])`,
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
 
@@ -5212,7 +4553,7 @@ window.executeManualLeaveSave = function(e) {
     performedBy: currentProcName,
     userRole: currentProcRole,
     reason: manualReason,
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
 
@@ -5256,7 +4597,7 @@ window.executeBalanceAdjustmentSave = function(e) {
       performedBy: currentProcName,
       userRole: currentProcRole,
       reason,
-      ipAddress: "127.0.0.1",
+      ipAddress: null,
       createdAt: new Date().toISOString()
     });
 
@@ -5308,7 +4649,7 @@ window.executeYearEndRollover = function() {
     performedBy: currentProcName,
     userRole: currentProcRole,
     reason: `Processed Year-End Carry Forward Rollover for ${rolledCount} balances (Total carried forward: ${totalCarriedForward} days)`,
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
 
@@ -5330,7 +4671,7 @@ window.archiveLeaveTypeAction = function(typeId) {
     performedBy: currentUser().name,
     userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN",
     reason: `Archived leave policy "${typeObj.name}" (${typeObj.code}).`,
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
   renderLeave();
@@ -5371,7 +4712,7 @@ window.executeDeleteLeavePolicy = function(typeId) {
     performedBy: currentProcName,
     userRole: currentProcRole,
     reason: `Permanently deleted leave policy "${typeName}" (${typeCode}) and cleared ${removedBalCount} associated balance allocation(s).`,
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
 
@@ -5430,7 +4771,7 @@ window.executeLeaveEncashmentSave = function(e) {
     performedBy: currentProcName,
     userRole: currentProcRole,
     reason: `Encashed ${days} days of ${bal.leaveTypeName}. ${reason ? 'Note: ' + reason : ''}`,
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
 
@@ -5558,7 +4899,7 @@ window.executeAddLeaveTypeSave = function(e) {
     performedBy: currentProcName,
     userRole: currentProcRole,
     reason: `Created custom leave policy ${name} (${code}) with standard two-tier matrix settings`,
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
 
@@ -5620,7 +4961,7 @@ window.executeEditLeaveTypeSave = function(e) {
     performedBy: currentProcName,
     userRole: currentProcRole,
     reason: `Updated leave policy ${typeObj.name} with modified matrix parameters`,
-    ipAddress: "127.0.0.1",
+    ipAddress: null,
     createdAt: new Date().toISOString()
   });
 
@@ -5641,7 +4982,7 @@ window.archiveLeaveTypeAction = function(typeId) {
 
     leaveStore.auditLogs.unshift({
 
-      id: `lal-${Date.now()}`, employeeId: "N/A", employeeName: "—", action: "POLICY_ARCHIVE", performedBy: currentUser().name, userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN", reason: `Archived leave policy ${typeObj.name}`, ipAddress: "127.0.0.1", createdAt: new Date().toISOString()
+      id: `lal-${Date.now()}`, employeeId: "N/A", employeeName: "—", action: "POLICY_ARCHIVE", performedBy: currentUser().name, userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN", reason: `Archived leave policy ${typeObj.name}`, ipAddress: null, createdAt: new Date().toISOString()
 
     });
 
@@ -5673,7 +5014,7 @@ window.executeProbationSave = function(e) {
 
   leaveStore.auditLogs.unshift({
 
-    id: `lal-${Date.now()}`, employeeId: "N/A", employeeName: "—", action: "PROBATION_POLICY_UPDATE", performedBy: currentUser().name, userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN", reason: `Updated probation settings to ${leaveStore.probationSettings.duration} ${leaveStore.probationSettings.durationUnit}`, ipAddress: "127.0.0.1", createdAt: new Date().toISOString()
+    id: `lal-${Date.now()}`, employeeId: "N/A", employeeName: "—", action: "PROBATION_POLICY_UPDATE", performedBy: currentUser().name, userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN", reason: `Updated probation settings to ${leaveStore.probationSettings.duration} ${leaveStore.probationSettings.durationUnit}`, ipAddress: null, createdAt: new Date().toISOString()
 
   });
 
@@ -5747,7 +5088,7 @@ window.executeEditHolidaySave = function(e) {
   hol.recurringAnnually = formData.get("recurring") === "on";
 
   leaveStore.auditLogs.unshift({
-    id: `lal-${Date.now()}`, employeeId: "N/A", employeeName: "—", action: "HOLIDAY_UPDATE", performedBy: currentUser().name, userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN", reason: `Updated holiday '${name}'`, ipAddress: "127.0.0.1", createdAt: new Date().toISOString()
+    id: `lal-${Date.now()}`, employeeId: "N/A", employeeName: "—", action: "HOLIDAY_UPDATE", performedBy: currentUser().name, userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN", reason: `Updated holiday '${name}'`, ipAddress: null, createdAt: new Date().toISOString()
   });
 
   showToast(`Holiday '${name}' updated.`);
@@ -8130,7 +7471,7 @@ function renderSettings() {
 
           <label>Company Name<input name="companyName" value="${escapeAttr(settings.companyName || "Digi Rathi")}" /></label>
 
-          <label>Email<input name="email" value="${escapeAttr(settings.email || "demo07@example.test")}" /></label>
+          <label>Email<input name="email" value="${escapeAttr(settings.email || "")}" /></label>
 
           <label>Phone<input name="phone" value="${escapeAttr(settings.phone || "+91 98765 43210")}" /></label>
 
@@ -8578,7 +7919,7 @@ async function submitLeaveRequest(event) {
       id: newReqId,
       employeeId: user.id || "EMP001",
       employeeName: user.name || "Digi Rathi Employee",
-      employeeCode: user.code || user.id || "DR-1001",
+      employeeCode: user.code || user.id || "",
       department: user.department || "Engineering",
       joiningDate: user.joiningDate || "2024-01-01",
       leaveTypeId: leaveTypeObj ? leaveTypeObj.id : "lt-casual",
@@ -8607,7 +7948,7 @@ async function submitLeaveRequest(event) {
       performedBy: user.name || "Employee",
       userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : appState.role === "HR Admin" ? "HR_ADMIN" : "EMPLOYEE",
       reason: `Submitted leave request for ${start}${start !== end ? ' to ' + end : ''} (${daysCount}d)`,
-      ipAddress: "127.0.0.1",
+      ipAddress: null,
       createdAt: new Date().toISOString()
     });
 
@@ -9116,29 +8457,7 @@ function getRelativeHistDate(daysAgo) {
 
 
 
-const mockHistoryDataset = [
-
-  { id:"ATT-HIST-001", employeeName:"Demo Person 01",    employeeId:"DR-002", department:"Engineering", date:getRelativeHistDate(0), workMode:"WFH",    clockIn:"08:45 AM", clockOut:"06:20 PM", workingHours:"09h 35m", status:"COMPLETED",         verification:"NOT_REQUIRED",       correctionStatus:"NO_REQUEST",       lastModified:"—" },
-
-  { id:"ATT-HIST-002", employeeName:"Demo Person 02",     employeeId:"DR-003", department:"HR",          date:getRelativeHistDate(0), workMode:null,     clockIn:"—",        clockOut:"—",        workingHours:"00h 00m", status:"ON_LEAVE",           verification:null,                 correctionStatus:"APPROVED",         lastModified:`HR · ${getRelativeHistDate(0)}` },
-
-  { id:"ATT-HIST-003", employeeName:"Demo Person 03",     employeeId:"DR-004", department:"Engineering", date:getRelativeHistDate(1), workMode:"OFFICE", clockIn:"09:55 AM", clockOut:"—",        workingHours:"—",       status:"MISSING_CLOCK_OUT",  verification:"IP_VERIFIED",        correctionStatus:"PENDING_REVIEW",   lastModified:"—" },
-
-  { id:"ATT-HIST-004", employeeName:"Demo Person 04",        employeeId:"DR-005", department:"Accounts",    date:getRelativeHistDate(1), workMode:"OFFICE", clockIn:"09:30 AM", clockOut:"06:45 PM", workingHours:"09h 15m", status:"COMPLETED",         verification:"IP_AND_GPS_VERIFIED", correctionStatus:"NO_REQUEST",       lastModified:"—" },
-
-  { id:"ATT-HIST-005", employeeName:"Demo Person 05",  employeeId:"DR-006", department:"Marketing",   date:getRelativeHistDate(2), workMode:"WFH",    clockIn:"09:00 AM", clockOut:"05:30 PM", workingHours:"08h 30m", status:"MANUALLY_CORRECTED", verification:"NOT_REQUIRED",       correctionStatus:"APPROVED",         lastModified:`Super Admin · ${getRelativeHistDate(2)}` },
-
-  { id:"ATT-HIST-006", employeeName:"Demo Person 06",    employeeId:"DR-007", department:"Operations",  date:getRelativeHistDate(3), workMode:"OFFICE", clockIn:"—",        clockOut:"—",        workingHours:"00h 00m", status:"NOT_CLOCKED_IN",     verification:"NOT_VERIFIED",       correctionStatus:"NO_REQUEST",       lastModified:"—" },
-
-  { id:"ATT-HIST-007", employeeName:"Demo Person 07",     employeeId:"DR-008", department:"Product",     date:getRelativeHistDate(4), workMode:null,     clockIn:"—",        clockOut:"—",        workingHours:"00h 00m", status:"WEEK_OFF",           verification:null,                 correctionStatus:"NO_REQUEST",       lastModified:"—" },
-
-  { id:"ATT-HIST-008", employeeName:"Demo Person 08",    employeeId:"DR-009", department:"Engineering", date:getRelativeHistDate(5), workMode:null,     clockIn:"—",        clockOut:"—",        workingHours:"00h 00m", status:"HOLIDAY",            verification:null,                 correctionStatus:"NO_REQUEST",       lastModified:"—" },
-
-  { id:"ATT-HIST-009", employeeName:"Demo Person 09",  employeeId:"DR-010", department:"HR",          date:getRelativeHistDate(6), workMode:"OFFICE", clockIn:"09:10 AM", clockOut:"12:30 PM", workingHours:"03h 20m", status:"INCOMPLETE_HOURS",   verification:"IP_VERIFIED",        correctionStatus:"MORE_INFO_REQUIRED",lastModified:"—" },
-
-  { id:"ATT-HIST-010", employeeName:"Demo Person 10",     employeeId:"DR-001", department:"Management",  date:getRelativeHistDate(7), workMode:"OFFICE", clockIn:"09:00 AM", clockOut:"06:30 PM", workingHours:"09h 30m", status:"COMPLETED",         verification:"IP_AND_GPS_VERIFIED", correctionStatus:"NO_REQUEST",       lastModified:"—" }
-
-];
+const mockHistoryDataset = [];
 
 
 
@@ -11395,7 +10714,7 @@ window.showAttendanceRulesModal = showAttendanceRulesModal;
 window.openPayslipModal         = openPayslipModal;
 
 
-window.bypassLoginWithMock      = bypassLoginWithMock;
+
 
 
 

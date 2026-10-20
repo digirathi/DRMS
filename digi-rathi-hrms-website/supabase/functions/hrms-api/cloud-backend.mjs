@@ -10,6 +10,7 @@ const error = (status, message) => {
 const check = (ok, message, status = 400) => {
   if (!ok) error(status, message);
 };
+function loginId(value){const id=String(value||'').trim().toLowerCase();check(/^[a-z][a-z0-9._-]{2,63}$/.test(id),'Use a login ID with 3–64 characters: letters, numbers, dots, underscores or hyphens. Start with a letter.');return id;}
 function createCloudBackend({
   db,
   nativeAuth,
@@ -96,6 +97,7 @@ function createCloudBackend({
       email: r.email,
       roles: [r.role],
       permissions: pending ? [] : permissions(r.role),
+      loginId: (await get('SELECT login_id FROM accounts WHERE employee_id=?',r.id))?.login_id||null,
       mustChangePassword: pending
     };
   };
@@ -154,6 +156,7 @@ function createCloudBackend({
     person: async id => await get('SELECT * FROM employees WHERE id=?', id),
     nativeAuth
   });
+  async function setLoginId(id,value){const alias=loginId(value);check(!await get('SELECT employee_id FROM accounts WHERE lower(login_id)=? AND employee_id<>?',alias,id)&&!await get('SELECT id FROM employees WHERE lower(id)=? AND id<>?',alias,id),'This login ID is unavailable.',409);await run('UPDATE accounts SET login_id=? WHERE employee_id=?',alias,id);return alias;}
   const attempts = new Map();
   async function limit(key) {
     const hashed = hash(key),
@@ -326,11 +329,13 @@ function createCloudBackend({
             ...v,
             role: 'EMPLOYEE'
           });
+        if(v.loginId)loginId(v.loginId);
         const actor = await tx(async () => {
           check(!(await get('SELECT employee_id FROM accounts LIMIT 1')), 'Initial setup is already complete.', 409);
           const id = 'EMP-' + crypto.randomUUID();
           await run('INSERT INTO employees(id,name,email,role,department,designation,shift) VALUES(?,?,?,?,?,?,?)', id, x.name, x.email, 'SUPER_ADMIN', x.department, 'Super Admin', x.shift);
-          await setPassword(id, v.password);
+          await setPassword(id, v.password,{temporary:v.temporary===true});
+          if(v.loginId)await setLoginId(id,v.loginId);
           await audit(id, 'SETUP', id, {});
           return await get('SELECT * FROM employees WHERE id=?', id);
         });
@@ -341,7 +346,7 @@ function createCloudBackend({
         await limit('login:' + ip);
         const v = await body(req),
           id = String(v.email || '').toLowerCase().trim(),
-          r = await get('SELECT e.*,a.must_change_password,a.temp_expires FROM employees e JOIN accounts a ON e.id=a.employee_id WHERE (e.email=? OR lower(e.id)=?) AND e.active=1', id, id);
+          r = await get('SELECT e.*,a.must_change_password,a.temp_expires FROM employees e JOIN accounts a ON e.id=a.employee_id WHERE (e.email=? OR a.login_id=? OR (a.login_id IS NULL AND lower(e.id)=?)) AND e.active=1', id, id, id);
         check(r && typeof v.password === 'string' && v.password.length <= 128, 'Email or password is incorrect.', 401);
         check(!r.must_change_password || r.temp_expires > now(), 'Your temporary password expired. Ask HR to resend the welcome email.', 401);
         r.nativeSession = await nativeAuth.login(r.email, v.password);
@@ -458,6 +463,7 @@ function createCloudBackend({
         await tx(async () => {
           const latest = await get('SELECT credential_version FROM accounts WHERE employee_id=?', a.id);
           check(latest.credential_version === account.credential_version, 'Your credentials changed. Sign in again.', 409);
+          if(v.loginId)await setLoginId(a.id,v.loginId);
           await setPassword(a.id, v.password);
           await run('DELETE FROM sessions WHERE employee_id=?', a.id);
           await audit(a.id, 'FIRST_LOGIN_PASSWORD_SET', a.id, {});
@@ -467,6 +473,16 @@ function createCloudBackend({
       }
       const account = await get('SELECT must_change_password,temp_expires FROM accounts WHERE employee_id=?', a.id);
       check(!account?.must_change_password, 'Set a new password before accessing the dashboard.', 403);
+
+      if(route==='/api/v1/auth/credentials'&&method==='PUT'){
+        await limit('credentials:'+a.id);const v=await body(req),previous=await get('SELECT * FROM accounts WHERE employee_id=?',a.id);
+        check(typeof v.currentPassword==='string'&&v.currentPassword.length<=128,'Enter your current password.',400);
+        const verified=await nativeAuth.login(a.email,v.currentPassword),alias=v.loginId?loginId(v.loginId):previous.login_id,newPassword=String(v.newPassword||'');
+        check(alias!==previous.login_id||newPassword,'Change your login ID or enter a new password.');
+        if(newPassword){check(newPassword.length>=12&&newPassword.length<=128,'Use a password with 12–128 characters.');check(newPassword===v.confirm,'Passwords do not match.');check(newPassword!==v.currentPassword,'Choose a password different from your current password.');}
+        await tx(async()=>{const latest=await get('SELECT credential_version FROM accounts WHERE employee_id=?',a.id);check(latest.credential_version===previous.credential_version,'Your credentials changed. Sign in again.',409);if(alias)await setLoginId(a.id,alias);if(newPassword)await setPassword(a.id,newPassword);else await run('UPDATE accounts SET credential_version=credential_version+1 WHERE employee_id=?',a.id);await run('DELETE FROM sessions WHERE employee_id=?',a.id);await audit(a.id,'ACCOUNT_CREDENTIALS_CHANGED',a.id,{loginIdChanged:alias!==previous.login_id,passwordChanged:!!newPassword});});
+        a.nativeSession=newPassword?await nativeAuth.login(a.email,newPassword):verified;return reply(200,await startSession(res,a,req));
+      }
       if (await extensions.handle({
         route,
         method,

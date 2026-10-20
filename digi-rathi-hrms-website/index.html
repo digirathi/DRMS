@@ -49,7 +49,7 @@
           <p>Use your official Digi Rathi account.</p>
         </div>
         <label>
-          Email or employee ID
+          Login ID or email
           <input type="text" name="email" autocomplete="username" placeholder=" " required />
         </label>
         <label>
@@ -63,9 +63,6 @@
         
         <button class="primary-button auth-submit" id="loginButton" type="submit">
           <i data-lucide="log-in"></i><span>Sign in</span>
-        </button>
-        <button class="secondary-button auth-submit" id="mockBypassButton" formnovalidate type="button" style="margin-top: 10px;">
-          <i data-lucide="eye"></i><span>Explore demo</span>
         </button>
       </form>
 
@@ -155,7 +152,7 @@
       <div class="sidebar-profile">
         <div class="profile-avatar">R</div>
         <div>
-          <strong>Demo Person 23</strong>
+          <strong>Account</strong>
           <span id="profileRole">Super Admin</span>
         </div>
         <button class="icon-button sidebar-close" id="sidebarClose" aria-label="Close menu"><i data-lucide="x"></i></button>
@@ -226,10 +223,10 @@
           <div class="role-selector-wrap" style="display:flex; align-items:center; gap:6px; background:var(--panel-soft); padding:4px 10px; border-radius:12px; border:1px solid var(--line);">
             <span style="font-size:0.75rem; font-weight:700; color:var(--muted-text); display:flex; align-items:center; gap:4px;"><i data-lucide="shield-check" style="width:14px; height:14px; color:var(--primary);"></i> Role:</span>
             <select aria-label="Preview role" id="roleSelect" onchange="window.switchActiveUserRole(this.value)" style="background:transparent; border:none; color:var(--text); font-size:0.8rem; font-weight:700; cursor:pointer; outline:none; font-family:inherit;">
-              <option value="Super Admin">Super Admin (Demo Person 23)</option>
-              <option value="HR Admin">HR Admin (Demo Person 25)</option>
+              <option value="Super Admin">Super Admin</option>
+              <option value="HR Admin">HR Admin</option>
 
-              <option value="Employee">Employee (Demo Person 24)</option>
+              <option value="Employee">Employee</option>
             </select>
           </div>
           <button class="icon-button" id="themeToggle" aria-label="Toggle dark mode"><i data-lucide="moon"></i></button>

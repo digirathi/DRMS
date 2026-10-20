@@ -3,23 +3,7 @@
   'use strict';
   matchMedia('(min-width: 1100px)').addEventListener('change', () => closeSidebar());
   closeSidebar();
-  window.prepareDemoData = function () {
-    const remap = new Map();
-    (window.payrollStore?.profiles || []).forEach((profile,index) => {
-      if (!employees[index]) employees.push({backendId:index+1,id:`DR-${String(index+1).padStart(3,'0')}`,name:profile.name,dept:profile.department,designation:profile.designation,role:'Employee',manager:'Demo Person 23 (DR-001)',status:'Active',attendance:'Not Started',checkInTime:null,shift:'09:00 AM - 06:00 PM',lateDays:0});
-      const employee=employees[index]; remap.set(profile.employeeId,employee);
-      Object.assign(profile,{employeeId:employee.id,name:employee.name,department:employee.dept,designation:employee.designation});
-    });
-    payrollStore.adjustments.forEach(a=>{if(remap.has(a.employeeId))a.employeeId=remap.get(a.employeeId).id;});
-    const mapRecord=r=>{const e=remap.get(r.employeeCode)||employees[Number(String(r.employeeId).replace(/\D/g,''))-1];if(e)Object.assign(r,{employeeId:e.id,employeeCode:e.id,employeeName:e.name,department:e.dept});};
-    leaveStore.requests.forEach(mapRecord);leaveStore.balances.forEach(mapRecord);leaveStore.auditLogs.forEach(mapRecord);
-    ensureAllEmployeeBalancesInitialized();
-    employees[0].attendance='Not Started';employees[0].checkInTime=null;
-    employees.forEach(e=>{e.attendance=getEmployeeAttendanceStatus(e);});
-    mockHistoryDataset.forEach((record,index)=>{const e=employees.find(e=>e.id===record.employeeId)||employees[index%employees.length];Object.assign(record,{employeeId:e.id,employeeName:e.name,department:e.dept,date:getRelativeHistDate(index+1)});});
-    appState.companyHolidays=leaveStore.holidays.filter(h=>h.isActive).map(h=>({date:h.date,name:h.name,type:'Company'}));
-    appState.departments=[...new Set(employees.map(e=>e.dept))].map((name,index)=>({id:index+1,name,code:name.slice(0,3).toUpperCase(),description:'',parent:name==='Management'?'None':'Management',head:employees.find(e=>e.dept===name)?.name||'',employees:employees.filter(e=>e.dept===name).length,status:'Active',created:'01 Jan 2026'}));
-  };
+  
   let scheduled=false;
   window.enhanceInterface=function () {
     scheduled=false;

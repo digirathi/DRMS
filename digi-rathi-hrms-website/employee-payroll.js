@@ -1,4 +1,3 @@
-// Public demo fixtures: identities and financial identifiers are placeholders.
 /* Employee payroll reads owned records only. Administrator payroll stays separate. */
 (() => {
   'use strict';
@@ -13,7 +12,6 @@
   const empty=(title,text,icon)=>`<div class="ep-empty">${U.icon(icon)}<h3>${e(title)}</h3><p>${e(text)}</p>${appState.isMockBypass?U.button('Contact HR','ep-help','',false,'message-square'):''}</div>`;
   const amount=n=>new Intl.NumberFormat('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n)||0);
   const validStatement=r=>['grossPay','totalDeductions','netPay'].every(k=>r[k]!==null&&r[k]!==undefined&&r[k]!==''&&Number.isFinite(Number(r[k])))&&Number(r.grossPay)>=0&&Number(r.totalDeductions)>=0&&Math.abs(Number(r.grossPay)-Number(r.totalDeductions)-Number(r.netPay))<.02;
-  function sampleSlip(){return {key:'FORMAT-PREVIEW',year:payrollStore.selectedYear||new Date().getFullYear(),month:payrollStore.selectedMonth||1,item:{employeeId:'FORMAT PREVIEW',name:'Sample Employee',designation:'Designation',department:'Department',location:'Location',payableDays:0,lwpDays:0,basic:0,hra:0,special:0,bonus:0,overtime:0,reimbursement:0,grossPay:0,lwpDeduction:0,epfEmployee:0,epfEmployer:0,esicEmployee:0,pt:0,tds:0,adhocDeduction:0,totalDeductions:0,netPay:0}};}
   function slipMarkup(slip,sample=false){
     const r=slip.item,company=appState.companySettings||{},logo=document.querySelector('.sidebar-brand img')?.src||'assets/digi-rathi-logo-cropped.png';
     const identity=rows=>`<dl>${rows.map(([key,value])=>`<div><dt>${e(key)}</dt><dd>${e(value===null||value===undefined||value===''?'—':value)}</dd></div>`).join('')}</dl>`;
@@ -25,9 +23,9 @@
   }
   function salarySlips(data){
     const heading='<header class="ep-section-head"><div><h3>Salary Slips</h3><p>Only finalized, published statements for your employee ID appear here.</p></div></header>';
-    if(!data.slips.length&&!state.sample)return heading+empty('No salary slips published yet','HR must finalize and publish a payroll cycle before your salary slip becomes available. Draft and held statements are not shown.','receipt-text')+U.button('Preview salary slip format','ep-format-preview','',false,'scan-eye');
+    if(!data.slips.length&&!state.sample)return heading+empty('No salary slips published yet','HR must finalize and publish a payroll cycle before your salary slip becomes available. Draft and held statements are not shown.','receipt-text');
     if(data.slips.length)state.sample=false;
-    const slip=state.sample?sampleSlip():data.slips.find(s=>s.key===state.slip)||data.slips[0];state.slip=slip.key;
+    const slip=data.slips.find(s=>s.key===state.slip)||data.slips[0];state.slip=slip.key;
     if(!validStatement(slip.item))return heading+empty('Salary slip needs review','The published statement contains incomplete or inconsistent totals. Ask HR to review it before printing.','circle-alert');
     const index=data.slips.findIndex(s=>s.key===slip.key),years=[...new Set(data.slips.map(s=>String(s.year)))],months=data.slips.filter(s=>s.year===slip.year);
     const nav=(label,action,disabled,icon)=>U.button(label,action,'',false,icon).replace('<button ',`<button ${disabled?'disabled ':''}`);
@@ -70,7 +68,6 @@
     'ep-bank-toggle':()=>{syncActor();D.requireValue(model().bank?.accountNumber,'No account number is recorded.');state.reveal=!state.reveal;render();},
     'ep-slip-open':key=>{ownSlip(key);U.actions['ew-payslip'](key);},
     'ep-slip-download':key=>{ownSlip(key);U.actions['ew-slip-download'](key);},
-    'ep-format-preview':()=>{model();state.sample=true;state.slip=null;render();},
     'ep-slip-prev':()=>{const data=model(),i=data.slips.findIndex(s=>s.key===state.slip);D.requireValue(i>=0&&i<data.slips.length-1,'No earlier published salary slip.');state.slip=data.slips[i+1].key;render();},
     'ep-slip-next':()=>{const data=model(),i=data.slips.findIndex(s=>s.key===state.slip);D.requireValue(i>0,'No later published salary slip.');state.slip=data.slips[i-1].key;render();},
     'ep-slip-print':printSlip,

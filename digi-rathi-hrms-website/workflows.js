@@ -55,14 +55,13 @@ let workflowState = null;
 
 function openWorkflow(type, options = {}) {
   if(type==='onboard' && options.employeeId && !options.viewOnly && !requireEmployeeAdministration(options.employeeId))return;
-  if(type==='onboard' && options.employeeId && appState.isMockBypass){openLocalEmployeeProfile(options.employeeId,options.viewOnly);return;}
   const requiredPermissions = {
     onboard: ["EMPLOYEE_CREATE"], department: [options.departmentId ? "DEPARTMENT_UPDATE" : "DEPARTMENT_CREATE"],
     payroll: ["PAYROLL_GENERATE"], document: ["DOCUMENT_GENERATE"], leaveCalendar: ["LEAVE_APPLY", "LEAVE_READ_TEAM", "LEAVE_READ_ALL"],
     report: ["REPORT_EXPORT"], attendanceSettings: ["SETTINGS_UPDATE"], attendanceRules: ["ATTENDANCE_READ_SELF"],
     holidayList: ["SETTINGS_UPDATE", "ATTENDANCE_READ_SELF"], leaveApproval: ["LEAVE_APPROVE", "LEAVE_APPROVE_ALL"]
   };
-  if ((!appState.backendConnected && !appState.isMockBypass) || !requiredPermissions[type]?.some((permission) => hasPermission(permission))) {
+  if (!appState.backendConnected || !requiredPermissions[type]?.some((permission) => hasPermission(permission))) {
     showToast("You do not have permission to access this action.");
     return;
   }
@@ -112,7 +111,7 @@ function defaultWorkflowData(type, options) {
       includeOvertime: true, includeLateDeductions: true, includeManualDeductions: true };
   }
   if (type === "document") return { documentType: "Appointment Letter", employee: linkedEmployees()[0] ? `${linkedEmployees()[0].name} (${linkedEmployees()[0].id})` : "", template: "Digi Rathi Standard Letterhead",
-    issueDate: today, effectiveDate: today, signatory: "Demo Person 12", emailToEmployee: true, saveToProfile: true };
+    issueDate: today, effectiveDate: today, signatory: "", emailToEmployee: true, saveToProfile: true };
   if (type === "leaveCalendar") {
     const date = new Date(); const month = String(date.getMonth() + 1).padStart(2, "0");
     const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -203,7 +202,7 @@ function workflowFooter() {
   const steps = isEdit ? definition.steps.slice(0, 8) : definition.steps;
   const last = workflowState.step === steps.length - 1;
   const reviewStep = workflowState.type === "onboard" && workflowState.step === 7;
-  const submitLabel = workflowState.type === "onboard" ? (appState.isMockBypass ? "Save Demo Employee" : isEdit ? "Update Profile" : "Onboard & Send Email")
+  const submitLabel = workflowState.type === "onboard" ? (isEdit ? "Update Profile" : "Onboard & Send Email")
     : workflowState.type === "department" ? (workflowState.options.departmentId ? "Update Department" : "Create Department")
     : workflowState.type === "payroll" ? "Finalize Payroll"
     : workflowState.type === "document" ? "Generate PDF"
@@ -422,9 +421,6 @@ function renderOnboardStep() {
   }
   
   if (step === 1) {
-    if (!workflowState.data.officialEmail && workflowState.data.fullName) {
-      workflowState.data.officialEmail = `${slugName(workflowState.data.fullName)}@digirathi.com`;
-    }
     const departments = appState.departments.filter((item) => item.status === "Active").map((item) => ({ value: item.name, label: `${item.name} (${item.code})` }));
     departments.push({ value: "__new__", label: "+ Add New Department" });
     
@@ -432,7 +428,7 @@ function renderOnboardStep() {
       ${section("Employment Details", "Assign position, access role, department, and work shifts.", `
         <div class="workflow-grid">
           ${textField("Employee ID", "employeeId", { readonly: true, help: "Auto-generated" })}
-          ${textField("Official Email", "officialEmail", { type: "email", help: "Generated from name" })}
+          ${textField("Official Email", "officialEmail", { type: "email", help: "Enter the employee’s actual email address" })}
           ${selectField("Department", "department", departments, { placeholder: "Select department" })}
           ${textField("Designation", "designation")}
           ${selectField("Reporting Manager", "reportingManager", ["No reporting manager", ...linkedEmployees().filter((item) => item.status === "Active").map((item) => `${item.name} (${item.id})`)])}
@@ -484,7 +480,7 @@ function renderOnboardStep() {
     ${section("Government Documents", "Secure identity cards, resume, and educational files.", `
       <div class="workflow-grid">
         ${textField("Aadhaar Number", "aadhaarNumber", { pattern: "[0-9]{12}", help: "12 digits", digitsOnly: true })}
-        ${textField("PAN Number", "panNumber", { pattern: "[A-Z]{5}[0-9]{4}[A-Z]", help: "e.g. ABCDE1234F" })}
+        ${textField("PAN Number", "panNumber", { pattern: "[A-Z]{5}[0-9]{4}[A-Z]", help: "5 letters, 4 digits, then 1 letter" })}
         ${uploadField("Aadhaar Card File", "aadhaarUpload", "application/pdf,image/png,image/jpeg")}
         ${uploadField("PAN Card File", "panUpload", "application/pdf,image/png,image/jpeg")}
         ${uploadField("Resume File", "resumeUpload", "application/pdf,.doc,.docx")}
@@ -576,37 +572,8 @@ function renderPayrollStep() {
 }
 
 function payrollPreviewRows() {
-  if (!workflowState.data.payrollRows) {
-    const selected = employees.filter((item) => item.status === "Active").slice(0, 4);
-    workflowState.data.payrollRows = selected.map((item, index) => {
-      const basic = 32000 + index * 5500, hra = Math.round(basic * 0.4), special = 7000 + index * 1000;
-      const overtime = workflowState.data.includeOvertime ? 1200 + index * 250 : 0;
-      const lwp = workflowState.data.includeLwp && index === 2 ? 1800 : 0;
-      const manual = workflowState.data.includeManualDeductions ? 500 : 0;
-      
-      const lateDays = window.getEmployeeLateDays ? window.getEmployeeLateDays(item) : (item.lateDays || 0);
-      const threshold = appState.attendanceLatePolicy?.lateDaysThreshold || 4;
-      const action = appState.attendanceLatePolicy?.penaltyAction || "Full Day";
-      const penaltyCount = Math.floor(lateDays / threshold);
-      const deductionDays = penaltyCount * (action === "Full Day" ? 1.0 : 0.5);
-      const lateDeduction = Math.round((basic / 30) * deductionDays);
-      
-      return { 
-        employee: item.name, 
-        employeeId: item.id,
-        basic, 
-        hra, 
-        special, 
-        overtime, 
-        lwp, 
-        lateDeduction,
-        manual, 
-        gross: basic + hra + special + overtime, 
-        net: basic + hra + special + overtime - lwp - lateDeduction - manual 
-      };
-    });
-  }
-  return workflowState.data.payrollRows;
+  // Preview values are populated only by the authenticated backend response.
+  return Array.isArray(workflowState.data.payrollRows) ? workflowState.data.payrollRows : [];
 }
 
 function renderDocumentStep() {
@@ -621,7 +588,7 @@ function renderDocumentStep() {
   if (workflowState.step === 0) return section("Document Setup", "Select the employee, template and delivery options.", `<form id="workflowForm" class="workflow-grid">
     ${selectField("Document Type", "documentType", types)}${selectField("Select Employee", "employee", linkedEmployees().map((item) => `${item.name} (${item.id})`))}
     ${selectField("Select Template", "template", templateOptions)}${textField("Issue Date", "issueDate", { type: "date" })}
-    ${textField("Effective Date", "effectiveDate", { type: "date", required: false, optional: true })}${selectField("Authorized Signatory", "signatory", ["Demo Person 12", "Demo Person 20"])}
+    ${textField("Effective Date", "effectiveDate", { type: "date", required: false, optional: true })}${textField("Authorized Signatory", "signatory")}
     <div class="full-span inline-group">${checkboxField("Email to Employee", "emailToEmployee")}${checkboxField("Save to Employee Profile", "saveToProfile")}</div>
     ${textareaField("Notes / Custom Message", "documentNotes", { required: false, optional: true })}
     <div class="template-upload full-span">
@@ -759,45 +726,19 @@ function renderReportLivePreview() {
     "DOCUMENT_REPORT": ["Document Type", "Employee", "Date", "Format", "Status"]
   };
   
-  const sampleDataMap = {
-    "EMPLOYEE_REPORT": [
-      ["DR-001", "Demo Person 23", "Management", "Super Admin", "Active"],
-      ["DR-002", "Demo Person 01", "Engineering", "Employee", "Active"],
-      ["DR-003", "Demo Person 02", "HR", "HR Admin", "Active"]
-    ],
-    "ATTENDANCE_REPORT": [
-      ["20 Jul 2026", "Demo Person 23", "09:00 AM", "06:00 PM", "Present"],
-      ["20 Jul 2026", "Demo Person 01", "09:15 AM", "05:45 PM", "WFH"],
-      ["20 Jul 2026", "Demo Person 02", "09:45 AM", "06:15 PM", "Late"]
-    ],
-    "LEAVE_REPORT": [
-      ["Demo Person 01", "Casual Leave", "21 Jul 2026", "22 Jul 2026", "Pending"],
-      ["Demo Person 02", "Sick Leave", "18 Jul 2026", "18 Jul 2026", "Approved"]
-    ],
-    "PAYROLL_REPORT": [
-      ["Demo Person 23", "07/2026", "₹1,20,000", "₹10,000", "₹1,10,000"],
-      ["Demo Person 01", "07/2026", "₹60,000", "₹5,000", "₹55,000"]
-    ],
-    "ASSET_REPORT": [
-      ["MacBook Pro 16", "AST-829", "Demo Person 23", "01 Jan 2026", "Issued"],
-      ["Dell Monitor 27", "AST-091", "Demo Person 01", "15 Jan 2026", "Issued"]
-    ],
-    "PERFORMANCE_REPORT": [
-      ["Demo Person 01", "H1 2026", "4.5 / 5", "Demo Person 23", "Completed"],
-      ["Demo Person 02", "H1 2026", "4.0 / 5", "Demo Person 23", "Pending Review"]
-    ],
-    "HELP_DESK_REPORT": [
-      ["TKT-001", "VPN Access issue", "IT Support", "High", "Open"],
-      ["TKT-002", "Salary discrepancy", "Payroll", "Medium", "Resolved"]
-    ],
-    "DOCUMENT_REPORT": [
-      ["Appointment Letter", "Demo Person 03", "15 Jul 2026", "PDF", "Shared"],
-      ["NDA", "Demo Person 22", "10 Jul 2026", "PDF", "Signed"]
-    ]
+  const emptyReportRows = {
+    "EMPLOYEE_REPORT": [],
+    "ATTENDANCE_REPORT": [],
+    "LEAVE_REPORT": [],
+    "PAYROLL_REPORT": [],
+    "ASSET_REPORT": [],
+    "PERFORMANCE_REPORT": [],
+    "HELP_DESK_REPORT": [],
+    "DOCUMENT_REPORT": []
   };
 
   const headers = headersMap[type] || headersMap["EMPLOYEE_REPORT"];
-  const rows = sampleDataMap[type] || sampleDataMap["EMPLOYEE_REPORT"];
+  const rows = emptyReportRows[type] || emptyReportRows["EMPLOYEE_REPORT"];
   
   return `
     <div class="summary-block" style="flex: 1; display: flex; flex-direction: column;">
@@ -1113,11 +1054,6 @@ function workflowError(message) { workflowState.validationMessage = message; ren
 
 async function saveWorkflowDraft(button) {
   const type = workflowState.type;
-  if (appState.isMockBypass) {
-    if(type === 'onboard') appState.onboardingDraft = {data:structuredClone(workflowState.data),assets:structuredClone(workflowState.assets),uploadTokens:{}};
-    else { workflowState.validationMessage='Saving this draft requires the connected HRMS service.'; renderWorkflow(); return; }
-    showToast('Demo draft saved for this session. It resets when you reload.'); return;
-  }
   const originalLabel = button.innerHTML;
   button.disabled = true;
   button.innerHTML = `<i data-lucide="loader-circle"></i>Saving`;
@@ -1174,15 +1110,6 @@ async function submitWorkflow() {
   if(!canSaveEmployeeWorkflow())return;
   workflowState.loading = true; renderWorkflow();
   const type = workflowState.type;
-  if(appState.isMockBypass) {
-    workflowState.loading=false;
-    if(!['onboard','department','attendanceSettings','holidayList'].includes(type)) {
-      workflowState.validationMessage='This action requires a connected HRMS service. No records were saved or emails sent.';renderWorkflow();return;
-    }
-    finalizeLocalWorkflow(type,null);
-    workflowState.success={title:'Demo changes saved',message:'Updated sample data for this session. No email was sent. Changes reset when you reload.',rows:[['Workspace','Demo only']]};
-    renderWorkflow();return;
-  }
   let payload = buildWorkflowPayload();
   let backendResult = null;
   try {
@@ -1708,7 +1635,7 @@ function documentTemplateLabel(value) {
   const template = appState.documentTemplates.find((item) => item.id === id);
   return template ? `${template.name} (DOCX v${template.version})` : value || "-";
 }
-function nextEmployeeId() { const highest = employees.map((item) => Number(String(item.id).replace("DR-", ""))).filter(Number.isFinite).reduce((max, value) => Math.max(max, value), 28); return `DR-${String(highest + 1).padStart(3, "0")}`; }
+function nextEmployeeId() { const highest = employees.map((item) => Number(String(item.id).replace("DR-", ""))).filter(Number.isFinite).reduce((max, value) => Math.max(max, value), 0); return `DR-${String(highest + 1).padStart(3, "0")}`; }
 function linkedEmployees() { return employees.filter((item) => item.backendId); }
 function slugName(name) { return name.toLowerCase().replace(/[^a-z0-9 ]/g, "").trim().replace(/\s+/g, "."); }
 function departmentCode(name) { const words = name.toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim().split(/\s+/).filter((word) => !["AND", "OF", "THE", "TEAM"].includes(word)); if (words.length > 1) return words.map((word) => word[0]).join("").slice(0, 6); return (words[0] || "").slice(0, 4); }
@@ -1741,9 +1668,9 @@ function renderAttendanceSettingsStep() {
 
 function renderAttendanceRulesStep() {
   const policy = appState.attendanceLatePolicy || { gracePeriodMins: 30, requiredWorkingHours: 9, lateDaysThreshold: 4, penaltyAction: "Full Day" };
-  const lat = appState.officeSettings?.lat || 28.6139;
-  const lng = appState.officeSettings?.lng || 77.2090;
-  const ip = appState.officeSettings?.ip || "192.168.1.100";
+  const lat = appState.officeSettings?.lat ?? 0;
+  const lng = appState.officeSettings?.lng ?? 0;
+  const ip = appState.officeSettings?.ip || "Not configured";
   
   return section("Corporate Attendance Rules & Policies", "Review the currently configured workplace parameters", `
     <div class="mini-list">
@@ -1888,18 +1815,3 @@ function renderLeaveApprovalStep() {
 
 window.openWorkflow = openWorkflow;
 
-// Existing demo employees use their actual in-memory profile, without a missing API call.
-function openLocalEmployeeProfile(id,viewOnly=false){
-  const U=HRWorkspaceUI,D=HRDomain,p=administrativeEmployee(id);if(!p)return;
-  if(viewOnly){U.dialog('Employee profile',p.name,U.details([['Employee ID',p.id],['Full name',p.name],['Department',p.dept],['Designation',p.designation||'Not added'],['Role',p.role],['Calling number',p.phone||'Not added'],['Manager',p.manager],['Status',p.status]]));return;}
-  if(!requireEmployeeAdministration(id))return;
-  const roles=p.role==='Super Admin'?['Super Admin']:appState.role==='Super Admin'?['Employee','HR Admin']:['Employee'];
-  U.dialog('Edit employee profile',p.id,'<div class="module-form">'+U.field('Full name','name',p.name,'text','required minlength="2" maxlength="100"')+U.field('Designation','designation',p.designation||'','text','maxlength="100"')+U.select('Department','department',[...new Set(employees.map(x=>x.dept))],p.dept)+(appState.role==='Super Admin'&&p.role!=='Super Admin'?U.select('Type of access','role',roles,HRDomain.accessRole(p.role)):U.field('Type of access','role',HRDomain.accessRole(p.role),'text','readonly'))+U.field('Calling number','phone',p.phone||'','tel','maxlength="25"')+U.area('Reason for change','reason','','required minlength="5" maxlength="500"')+'</div>',v=>{
-    U.permitted(canAdministerEmployee(id));D.requireValue(roles.includes(v.role)&&D.canAssignAccess(appState.role,v.role,p.role),'Only Super Admin can assign HR Admin access.');D.reason(v.reason);D.requireValue(v.name.trim().length>=2,'Enter the employee name.');
-    const before={name:p.name,role:p.role,department:p.dept,designation:p.designation,phone:p.phone};
-    Object.assign(p,{name:v.name.trim(),designation:v.designation.trim(),dept:v.department,role:v.role,phone:v.phone.trim()});
-    (appState.profileAudit||=[]).unshift({employeeId:p.id,before,after:{name:p.name,role:p.role,department:p.dept,designation:p.designation,phone:p.phone},by:currentUser().id,reason:v.reason.trim(),at:new Date().toISOString()});
-    if(isOwnEmployeeRecord(p)){appState.backendUser.displayName=p.name;appState.currentEmployee=p;}
-    U.finish('Employee profile updated for this demo session.');renderEmployees();updateProfile();
-  },'Save employee profile');
-}

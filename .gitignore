@@ -10,7 +10,7 @@
 !**/.env.example
 !**/.env.supabase.example
 **/supabase.env
-/digi-rathi-hrms-website/data/
+**/data/
 **/*.sqlite*
 **/*.db
 **/*.db-wal

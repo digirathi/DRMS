@@ -1,4 +1,3 @@
-// Public demo fixtures: identities and financial identifiers are placeholders.
 // ============================================================================
 // DigiRathi DRMS - Enterprise Payroll Management Module (Indian Compliance)
 // ============================================================================
@@ -49,300 +48,23 @@
   }
 
   // Initial Compensation Profiles for Employees
-  const initialCompensationProfiles = [
-    {
-      employeeId: "DR-1001",
-      name: "Demo Person 13",
-      department: "Engineering",
-      designation: "Senior Software Engineer",
-      doj: "2024-03-15",
-      annualCtc: 1440000,
-      monthlyGross: 120000,
-      structureId: "struct-tech",
-      structureName: "Standard Tech & Engineering",
-      bankDetails: {
-        bankName: "Demo Bank",
-        accountNumber: "00000000000002",
-        ifsc: "DEMO0000001",
-        accountType: "Salary Account"
-      },
-      statutory: {
-        pan: "DEMOA0000A",
-        uan: "000000000003",
-        esic: "N/A (Exempt)",
-        taxRegime: "NEW"
-      },
-      status: "Active"
-    },
-    {
-      employeeId: "DR-1002",
-      name: "Demo Person 14",
-      department: "Product",
-      designation: "Product Lead",
-      doj: "2025-01-10",
-      annualCtc: 1800000,
-      monthlyGross: 150000,
-      structureId: "struct-lead",
-      structureName: "Leadership & Executive",
-      bankDetails: {
-        bankName: "Demo Bank",
-        accountNumber: "000000000004",
-        ifsc: "DEMO0000001",
-        accountType: "Salary Account"
-      },
-      statutory: {
-        pan: "DEMOA0000A",
-        uan: "000000000005",
-        esic: "N/A (Exempt)",
-        taxRegime: "NEW"
-      },
-      status: "Active"
-    },
-    {
-      employeeId: "DR-1003",
-      name: "Demo Person 16",
-      department: "Design",
-      designation: "UI/UX Designer",
-      doj: "2026-05-01",
-      annualCtc: 960000,
-      monthlyGross: 80000,
-      structureId: "struct-prod",
-      structureName: "Product & Design Tier",
-      bankDetails: {
-        bankName: "Demo Bank",
-        accountNumber: "00000000006",
-        ifsc: "DEMO0000001",
-        accountType: "Savings Account"
-      },
-      statutory: {
-        pan: "DEMOA0000A",
-        uan: "000000000007",
-        esic: "N/A (Exempt)",
-        taxRegime: "NEW"
-      },
-      status: "Active"
-    },
-    {
-      employeeId: "DR-1004",
-      name: "Demo Person 17",
-      department: "Engineering",
-      designation: "Frontend Developer",
-      doj: "2023-11-01",
-      annualCtc: 780000,
-      monthlyGross: 65000,
-      structureId: "struct-tech",
-      structureName: "Standard Tech & Engineering",
-      bankDetails: {
-        bankName: "Demo Bank",
-        accountNumber: "000000000000008",
-        ifsc: "DEMO0000001",
-        accountType: "Salary Account"
-      },
-      statutory: {
-        pan: "DEMOA0000A",
-        uan: "000000000009",
-        esic: "N/A (Exempt)",
-        taxRegime: "NEW"
-      },
-      status: "Active"
-    },
-    {
-      employeeId: "DR-1005",
-      name: "Demo Person 18",
-      department: "Human Resources",
-      designation: "HR Specialist",
-      doj: "2024-06-01",
-      annualCtc: 600000,
-      monthlyGross: 50000,
-      structureId: "struct-ops",
-      structureName: "Operations & Support",
-      bankDetails: {
-        bankName: "Demo Bank",
-        accountNumber: "0000000010",
-        ifsc: "DEMO0000001",
-        accountType: "Salary Account"
-      },
-      statutory: {
-        pan: "DEMOA0000A",
-        uan: "000000000011",
-        esic: "N/A (Exempt)",
-        taxRegime: "NEW"
-      },
-      status: "Active"
-    },
-    {
-      employeeId: "DR-1006",
-      name: "Demo Person 19",
-      department: "Sales",
-      designation: "Sales Executive",
-      doj: "2025-02-15",
-      annualCtc: 480000,
-      monthlyGross: 40000,
-      structureId: "struct-ops",
-      structureName: "Operations & Support",
-      bankDetails: {
-        bankName: "Demo Bank",
-        accountNumber: "00000000000012",
-        ifsc: "DEMO0000001",
-        accountType: "Salary Account"
-      },
-      statutory: {
-        pan: "DEMOA0000A",
-        uan: "000000000013",
-        esic: "N/A (Exempt)",
-        taxRegime: "NEW"
-      },
-      status: "Active"
-    },
-    {
-      employeeId: "DR-1007",
-      name: "Demo Person 21",
-      department: "Operations",
-      designation: "Trainee Associate",
-      doj: "2026-06-15",
-      annualCtc: 240000,
-      monthlyGross: 20000,
-      structureId: "struct-ops",
-      structureName: "Operations & Support",
-      bankDetails: {
-        bankName: "Demo Bank",
-        accountNumber: "000000000014",
-        ifsc: "DEMO0000001",
-        accountType: "Savings Account"
-      },
-      statutory: {
-        pan: "DEMOA0000A",
-        uan: "000000000015",
-        esic: "00000000000000016",
-        taxRegime: "NEW"
-      },
-      status: "Active"
-    }
-  ];
+  const initialCompensationProfiles = [];
 
   // Salary Structure Templates
-  const initialSalaryStructures = [
-    {
-      id: "struct-tech",
-      name: "Standard Tech & Engineering",
-      description: "Optimized for core software engineering roles with standard 40/20/40 component split.",
-      basicPct: 40,
-      hraPct: 20,
-      specialPct: 40,
-      hasEpf: true,
-      hasEsic: true,
-      hasPt: true,
-      employeesCount: 2
-    },
-    {
-      id: "struct-lead",
-      name: "Leadership & Executive",
-      description: "Tailored for senior directors and department leads with high basic and HRA allocation.",
-      basicPct: 50,
-      hraPct: 25,
-      specialPct: 25,
-      hasEpf: true,
-      hasEsic: false,
-      hasPt: true,
-      employeesCount: 1
-    },
-    {
-      id: "struct-prod",
-      name: "Product & Design Tier",
-      description: "Standard structure for product managers, researchers, and UI/UX designers.",
-      basicPct: 45,
-      hraPct: 22.5,
-      specialPct: 32.5,
-      hasEpf: true,
-      hasEsic: true,
-      hasPt: true,
-      employeesCount: 1
-    },
-    {
-      id: "struct-ops",
-      name: "Operations & Support",
-      description: "Suitable for administrative, operations, and entry-level roles with statutory ESIC coverage.",
-      basicPct: 50,
-      hraPct: 25,
-      specialPct: 25,
-      hasEpf: true,
-      hasEsic: true,
-      hasPt: true,
-      employeesCount: 3
-    }
-  ];
+  const initialSalaryStructures = [];
 
-  // Ad-hoc Variable Pay Adjustments (August 2026)
-  const initialVariableAdjustments = [
-    {
-      id: "adj-1",
-      employeeId: "DR-1001",
-      employeeName: "Demo Person 13",
-      type: "BONUS",
-      label: "Quarterly Performance Bonus",
-      amount: 10000,
-      month: 8,
-      year: 2026,
-      reason: "Outstanding delivery on multi-tenant leave architecture.",
-      approvedBy: "Demo Person 15 (Super Admin)",
-      date: "2026-08-25"
-    },
-    {
-      id: "adj-2",
-      employeeId: "DR-1004",
-      employeeName: "Demo Person 17",
-      type: "OVERTIME",
-      label: "Critical Release Overtime (14h)",
-      amount: 3500,
-      month: 8,
-      year: 2026,
-      reason: "Weekend production incident support.",
-      approvedBy: "Demo Person 01 (Manager)",
-      date: "2026-08-20"
-    },
-    {
-      id: "adj-3",
-      employeeId: "DR-1005",
-      employeeName: "Demo Person 18",
-      type: "REIMBURSEMENT",
-      label: "HR Tech Summit Travel Reimbursement",
-      amount: 4200,
-      month: 8,
-      year: 2026,
-      reason: "Client recruitment travel expenses approved.",
-      approvedBy: "Demo Person 15 (Super Admin)",
-      date: "2026-08-18"
-    }
-  ];
+  // Ad-hoc Variable Pay Adjustments (selected payroll cycle)
+  const initialVariableAdjustments = [];
 
   // Immutable Audit Logs
-  const initialPayrollAuditLogs = [
-    {
-      id: "pal-101",
-      action: "RUN_FINALIZED",
-      cycle: "July 2026",
-      performedBy: "Demo Person 15",
-      userRole: "SUPER_ADMIN",
-      reason: "Finalized July 2026 payroll run and locked bank disbursement register.",
-      timestamp: "2026-07-31T18:30:00Z"
-    },
-    {
-      id: "pal-102",
-      action: "PAYSLIPS_PUBLISHED",
-      cycle: "July 2026",
-      performedBy: "Demo Person 15",
-      userRole: "SUPER_ADMIN",
-      reason: "Dispatched 7 digital payslips to employee self-service portal.",
-      timestamp: "2026-08-01T09:15:00Z"
-    }
-  ];
+  const initialPayrollAuditLogs = [];
 
   // Global Payroll State
   window.payrollStore = {
     activeTab: "dashboard", // "dashboard" | "register" | "structures" | "profiles" | "payslips" | "reports"
     userRole: "SUPER_ADMIN",
-    selectedMonth: 8,
-    selectedYear: 2026,
+    selectedMonth: new Date().getMonth()+1,
+    selectedYear: new Date().getFullYear(),
     filters: {
       search: "",
       department: "ALL",
@@ -382,7 +104,7 @@
   // --------------------------------------------------------------------------
   window.calculatePayrollItem = function(emp) {
     const store = window.payrollStore;
-    const daysInMonth = 31; // August
+    const daysInMonth = new Date(store.selectedYear, store.selectedMonth, 0).getDate();
     
     // Attendance & Leave Integration
     // Check leaveStore for unpaid leave applications in this month
@@ -396,10 +118,7 @@
       );
       lwpDays = unpaids.reduce((sum, r) => sum + (Number(r.totalDays) || 0), 0);
     }
-    // Specific preset for Demo Person 18 who has approved unpaid leave of 3 days
-    if (emp.employeeId === "DR-1005" && lwpDays === 0) {
-      lwpDays = 3;
-    }
+    
 
     const payableDays = Math.max(0, daysInMonth - lwpDays);
 
@@ -555,14 +274,14 @@
 
   window.finishRunPayroll = function() {
     window.payrollStore.activeModal = null;
-    showToast("✓ Payroll calculation completed for August 2026. Register updated!", "success");
+    showToast("✓ Payroll calculation completed for selected payroll cycle. Register updated!", "success");
     window.payrollStore.activeTab = "register";
     window.renderPayrollSuite();
   };
 
   window.finalizeCurrentPayrollRun = function() {
     const store = window.payrollStore;
-    if (!confirm("Are you sure you want to finalize and lock the August 2026 Payroll Run? This will lock all compensation calculations, generate immutable audit records, and enable bank disbursement.")) {
+    if (!confirm("Are you sure you want to finalize and lock the selected payroll cycle Payroll Run? This will lock all compensation calculations, generate immutable audit records, and enable bank disbursement.")) {
       return;
     }
     store.currentRunStatus = "FINALIZED";
@@ -571,13 +290,13 @@
     store.auditLogs.unshift({
       id: `pal-${Date.now()}`,
       action: "RUN_FINALIZED",
-      cycle: "August 2026",
+      cycle: "selected payroll cycle",
       performedBy: currentUser().name,
       userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN",
-      reason: `Finalized August 2026 payroll run for ${store.profiles.length} employees.`,
+      reason: `Finalized selected payroll cycle payroll run for ${store.profiles.length} employees.`,
       timestamp: new Date().toISOString()
     });
-    showToast("✓ August 2026 Payroll Run is now FINALIZED and LOCKED!", "success");
+    showToast("✓ selected payroll cycle Payroll Run is now FINALIZED and LOCKED!", "success");
     window.renderPayrollSuite();
   };
 
@@ -587,13 +306,13 @@
     store.auditLogs.unshift({
       id: `pal-${Date.now()}`,
       action: "PAYSLIPS_PUBLISHED",
-      cycle: "August 2026",
+      cycle: "selected payroll cycle",
       performedBy: currentUser().name,
       userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN",
-      reason: `Published all digital payslips to employee self-service portal for August 2026.`,
+      reason: `Published all digital payslips to employee self-service portal for selected payroll cycle.`,
       timestamp: new Date().toISOString()
     });
-    showToast("✓ All 7 payslips successfully published to Employee Portals!", "success");
+    showToast("Payslip publication completed for the selected register.", "success");
     window.renderPayrollSuite();
   };
 
@@ -639,7 +358,7 @@
     window.payrollStore.auditLogs.unshift({
       id: `pal-${Date.now()}`,
       action: "VARIABLE_ADJUSTMENT",
-      cycle: "August 2026",
+      cycle: "selected payroll cycle",
       performedBy: currentUser().name,
       userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN",
       reason: `Added ${type} (${label}) of ₹${amount.toLocaleString()} for ${emp.name}. Reason: ${reason}`,
@@ -688,7 +407,7 @@
     window.payrollStore.auditLogs.unshift({
       id: `pal-${Date.now()}`,
       action: "SALARY_REVISION",
-      cycle: "August 2026",
+      cycle: "selected payroll cycle",
       performedBy: currentUser().name,
       userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN",
       reason: `Revised CTC for ${emp.name} from ₹${oldCtc.toLocaleString()} to ₹${newCtc.toLocaleString()} effective ${effectiveDate}. Reason: ${reason}`,
@@ -718,13 +437,13 @@
       const item = window.calculatePayrollItem(emp);
       if (!item.isOnHold) {
         rows.push([
-          "00000000000001", // DEMO corporate account - not a payment instruction
+          appState.companySettings?.bankAccountNumber||'', // Configure the actual company debit account before bank export
           item.name,
           emp.bankDetails.accountNumber,
           emp.bankDetails.ifsc,
           item.netPay,
           "NEFT",
-          `SALARY AUG 2026 ${item.employeeId}`
+          `SALARY SELECTED CYCLE ${item.employeeId}`
         ]);
       }
     });
@@ -733,7 +452,7 @@
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `DigiRathi_Bank_Payout_Aug_2026.csv`);
+    link.setAttribute("download", `DigiRathi_Bank_Payout_Selected_Cycle.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -741,10 +460,10 @@
     store.auditLogs.unshift({
       id: `pal-${Date.now()}`,
       action: "BANK_FILE_EXPORT",
-      cycle: "August 2026",
+      cycle: "selected payroll cycle",
       performedBy: currentUser().name,
       userRole: appState.role === "Super Admin" ? "SUPER_ADMIN" : "HR_ADMIN",
-      reason: `Downloaded Bank Payout NEFT/RTGS CSV for August 2026 cycle.`,
+      reason: `Downloaded Bank Payout NEFT/RTGS CSV for selected payroll cycle cycle.`,
       timestamp: new Date().toISOString()
     });
     showToast("✓ Bank Payout CSV downloaded successfully!", "success");
@@ -774,7 +493,7 @@
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `DigiRathi_Salary_Register_Aug_2026.csv`);
+    link.setAttribute("download", `DigiRathi_Salary_Register_Selected_Cycle.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -830,7 +549,7 @@
     const isFinalized = store.currentRunStatus === "FINALIZED";
     const statusPill = isFinalized 
       ? `<span style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:4px 10px; border-radius:999px; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:4px;">${icons.lock} FINALIZED & LOCKED</span>`
-      : `<span style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); padding:4px 10px; border-radius:999px; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:4px;">${icons.zap} ACTIVE DRAFT (AUG 2026)</span>`;
+      : `<span style="background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); padding:4px 10px; border-radius:999px; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:4px;">${icons.zap} ACTIVE DRAFT</span>`;
 
     // Tab Contents HTML
     let tabContentHtml = "";
@@ -879,11 +598,11 @@
                   <div style="display:flex; align-items:center; gap:8px;">
                     <span style="color:#10b981;">${icons.check}</span>
                     <div>
-                      <strong>Sample attendance & leave cutoff</strong>
-                      <div style="font-size:0.7rem; color:var(--muted-text);">31 calendar days, 0 pending unreviewed leaves in August.</div>
+                      <strong>Attendance & leave cutoff</strong>
+                      <div style="font-size:0.7rem; color:var(--muted-text);">Review attendance and pending leave for the selected month.</div>
                     </div>
                   </div>
-                  <span style="font-size:0.7rem; font-weight:700; color:#10b981; background:rgba(16,185,129,0.1); padding:3px 8px; border-radius:6px;">DEMO DATA</span>
+                  <span style="font-size:0.7rem; font-weight:700; color:#10b981; background:rgba(16,185,129,0.1); padding:3px 8px; border-radius:6px;">REVIEW REQUIRED</span>
                 </div>
 
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:10px; background:var(--panel-soft); border-radius:10px; border:1px solid var(--line);">
@@ -891,7 +610,7 @@
                     <span style="color:#10b981;">${icons.check}</span>
                     <div>
                       <strong>Variable Pay & Reimbursements Reviewed</strong>
-                      <div style="font-size:0.7rem; color:var(--muted-text);">3 adjustments approved (Bonuses & Overtime: ₹17,700).</div>
+                      <div style="font-size:0.7rem; color:var(--muted-text);">Review saved adjustments before finalizing payroll.</div>
                     </div>
                   </div>
                   <button onclick="window.switchPayrollTab('register')" style="font-size:0.7rem; background:transparent; border:1px solid var(--line); color:var(--primary); padding:3px 8px; border-radius:6px; cursor:pointer;">Review Pay</button>
@@ -901,11 +620,11 @@
                   <div style="display:flex; align-items:center; gap:8px;">
                     <span style="color:#10b981;">${icons.check}</span>
                     <div>
-                      <strong>Sample statutory deductions</strong>
+                      <strong>Statutory deductions</strong>
                       <div style="font-size:0.7rem; color:var(--muted-text);">EPF 12% with wage cap, ESIC under ₹21k, PT ₹200, New Regime TDS.</div>
                     </div>
                   </div>
-                  <span style="font-size:0.7rem; font-weight:700; color:#10b981; background:rgba(16,185,129,0.1); padding:3px 8px; border-radius:6px;">DEMO ESTIMATE</span>
+                  <span style="font-size:0.7rem; font-weight:700; color:#10b981; background:rgba(16,185,129,0.1); padding:3px 8px; border-radius:6px;">REVIEW REQUIRED</span>
                 </div>
 
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:10px; background:var(--panel-soft); border-radius:10px; border:1px solid var(--line);">
@@ -925,7 +644,7 @@
             <div style="background:var(--panel-raised); border:1px solid var(--line); border-radius:16px; padding:18px; display:flex; flex-direction:column; justify-content:space-between;">
               <div>
                 <h3 style="font-size:0.95rem; font-weight:800; margin:0 0 8px;">Run Actions</h3>
-                <p style="font-size:0.75rem; color:var(--muted-text); margin:0 0 14px;">Direct execution shortcuts for the active August 2026 cycle.</p>
+                <p style="font-size:0.75rem; color:var(--muted-text); margin:0 0 14px;">Direct execution shortcuts for the active selected payroll cycle cycle.</p>
                 <div style="display:flex; flex-direction:column; gap:8px;">
                   <button onclick="window.openRunPayrollWizard()" class="primary-button" style="display:flex; align-items:center; justify-content:center; gap:6px; font-size:0.78rem; padding:9px;">
                     ${icons.zap} Run Payroll Wizard
@@ -939,7 +658,7 @@
                 </div>
               </div>
               <div style="margin-top:14px; padding-top:10px; border-top:1px solid var(--line); font-size:0.7rem; color:var(--muted-text);">
-                Corporate Bank: <strong>HDFC Corporate Net Banking</strong>
+                Corporate Bank: <strong>Configure your bank before export</strong>
               </div>
             </div>
           </div>
@@ -1223,7 +942,7 @@
         <div style="background:var(--panel-raised); border:1px solid var(--line); border-radius:18px; padding:18px;">
           <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:16px;">
             <div>
-              <h3 style="font-size:1rem; font-weight:800; margin:0 0 4px;">August 2026 Payslips Directory</h3>
+              <h3 style="font-size:1rem; font-weight:800; margin:0 0 4px;">selected payroll cycle Payslips Directory</h3>
               <p style="font-size:0.75rem; color:var(--muted-text); margin:0;">
                 ${store.payslipsPublished ? '✓ Published to employee self-service portal.' : 'Draft state. Ready for publishing and distribution.'}
               </p>
@@ -1248,7 +967,7 @@
                       <h4 style="font-size:0.9rem; font-weight:800; margin:0; color:var(--text);">${escapeHtml(item.name)}</h4>
                       <div style="font-size:0.7rem; color:var(--muted-text);">${item.employeeId} &bull; ${item.department}</div>
                     </div>
-                    <span style="font-size:0.65rem; background:rgba(16,185,129,0.1); color:#10b981; font-weight:700; padding:2px 6px; border-radius:4px;">AUG 2026</span>
+                    <span style="font-size:0.65rem; background:rgba(16,185,129,0.1); color:#10b981; font-weight:700; padding:2px 6px; border-radius:4px;">SELECTED CYCLE</span>
                   </div>
 
                   <div style="margin:12px 0; padding:10px; background:var(--panel-raised); border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
@@ -1286,7 +1005,7 @@
             <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px;">
               <div>
                 <h3 style="font-size:1rem; font-weight:800; margin:0 0 4px;">Bank Payout Batch File (NEFT / RTGS)</h3>
-                <p style="font-size:0.75rem; color:var(--muted-text); margin:0;">Formatted for direct upload to Indian Corporate Net Banking (HDFC, ICICI, Axis, SBI).</p>
+                <p style="font-size:0.75rem; color:var(--muted-text); margin:0;">Review the CSV against your bank’s import requirements before use.</p>
               </div>
               <button onclick="window.exportBankPayoutCSV()" class="primary-button" style="font-size:0.75rem; padding:8px 14px; display:inline-flex; align-items:center; gap:6px;">
                 ${icons.download} Export Bank Payout CSV
@@ -1294,10 +1013,10 @@
             </div>
 
             <div style="padding:12px; background:var(--panel-soft); border-radius:12px; border:1px solid var(--line); font-size:0.75rem; display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px;">
-              <div>Debit Account: <strong>00000000000001 (Digi Rathi Technologies Pvt Ltd)</strong></div>
+              <div>Debit Account: <strong>${escapeHtml(appState.companySettings?.bankAccountNumber || 'Not configured')}</strong></div>
               <div>Total Beneficiaries: <strong>${items.filter(i => !i.isOnHold).length} Employees</strong></div>
               <div>Disbursement Amount: <strong style="color:#10b981;">${moneyDisplay(totalNetPayout)}</strong></div>
-              <div>Cycle: <strong>August 2026</strong></div>
+              <div>Cycle: <strong>selected payroll cycle</strong></div>
             </div>
           </div>
 
@@ -1321,7 +1040,7 @@
                 <h4 style="font-size:0.88rem; font-weight:800; margin:0 0 4px;">ESIC Monthly Return</h4>
                 <p style="font-size:0.7rem; color:var(--muted-text); margin:0 0 12px;">ESIC portal return for covered employees (Gross &le; ₹21,000).</p>
                 <div style="font-size:0.75rem; margin-bottom:12px;">
-                  <div>Covered Employees: <strong>1 Employee (Demo Person 21)</strong></div>
+                  <div>Covered Employees: <strong>${items.filter(i => i.esicEmployee > 0).length} Employees</strong></div>
                   <div>Total Contribution: <strong>${moneyDisplay(items.reduce((s, i) => s + i.esicEmployee + i.esicEmployer, 0))}</strong></div>
                 </div>
                 <button onclick="window.exportSalaryRegisterCSV()" class="secondary-button" style="width:100%; font-size:0.72rem; padding:6px; display:inline-flex; align-items:center; justify-content:center; gap:4px;">
@@ -1361,7 +1080,7 @@
             <div style="position:relative; width:100%; max-width:720px; max-height:92vh; overflow-y:auto; background:#ffffff; color:#0f172a; border-radius:16px; padding:28px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); font-family:sans-serif;">
               <!-- Payslip Actions (Non-printable) -->
               <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #e2e8f0;">
-                <div style="font-size:0.8rem; font-weight:700; color:#64748b;">Digital Payslip Preview &bull; August 2026</div>
+                <div style="font-size:0.8rem; font-weight:700; color:#64748b;">Digital Payslip Preview &bull; selected payroll cycle</div>
                 <div style="display:flex; gap:8px;">
                   <button onclick="window.printPayslip()" style="background:#4f46e5; color:#fff; border:none; border-radius:8px; padding:6px 12px; font-size:0.75rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
                     ${icons.download} Print / Save PDF
@@ -1377,13 +1096,13 @@
                 <!-- Company Header -->
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #0f172a; padding-bottom:14px; margin-bottom:14px;">
                   <div>
-                    <h2 style="font-size:1.4rem; font-weight:900; margin:0; color:#0f172a; letter-spacing:-0.02em;">DIGIRATHI TECHNOLOGIES PVT LTD</h2>
-                    <p style="font-size:0.72rem; color:#475569; margin:2px 0 0;">CIN: U72900DL2023PTC123456 &bull; GSTIN: 07AAAAA0000A1Z5</p>
-                    <p style="font-size:0.72rem; color:#475569; margin:0;">Level 4, Tech Boulevard, Sector 127, Noida, Uttar Pradesh 201301</p>
+                    <h2 style="font-size:1.4rem; font-weight:900; margin:0; color:#0f172a; letter-spacing:-0.02em;">${escapeHtml(appState.companySettings?.companyName || 'Company name not configured')}</h2>
+                    <p style="font-size:0.72rem; color:#475569; margin:2px 0 0;">${escapeHtml(appState.companySettings?.cin || '')}</p>
+                    <p style="font-size:0.72rem; color:#475569; margin:0;">${escapeHtml(appState.companySettings?.officeAddress || '')}</p>
                   </div>
                   <div style="text-align:right;">
                     <div style="font-size:1rem; font-weight:800; color:#4f46e5;">PAYSLIP</div>
-                    <div style="font-size:0.75rem; font-weight:700; color:#0f172a;">August 2026</div>
+                    <div style="font-size:0.75rem; font-weight:700; color:#0f172a;">selected payroll cycle</div>
                   </div>
                 </div>
 
@@ -1496,7 +1215,7 @@
                       <div style="font-size:1.3rem; font-weight:900; color:#065f46;">₹${item.netPay.toLocaleString()}</div>
                     </div>
                     <div style="text-align:right; font-size:0.75rem; color:#065f46; font-weight:700;">
-                      Disbursement: Direct Bank Transfer
+                      Payment status: not confirmed
                     </div>
                   </div>
                   <div style="font-size:0.7rem; color:#065f46; margin-top:4px; font-weight:600;">
@@ -1516,7 +1235,7 @@
                     Generated on: ${new Date().toLocaleDateString("en-IN")} &bull; DigiRathi DRMS
                   </div>
                   <div style="text-align:right;">
-                    <strong>For DIGIRATHI TECHNOLOGIES PVT LTD</strong><br/><br/>
+                    <strong>For ${escapeHtml(appState.companySettings?.companyName || 'Company name not configured')}</strong><br/><br/>
                     <span>Authorized Signatory</span>
                   </div>
                 </div>
@@ -1536,7 +1255,7 @@
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
               <div>
                 <h3 style="font-size:1.1rem; font-weight:800; margin:0 0 4px;">Adjust Variable Pay</h3>
-                <p style="font-size:0.75rem; color:var(--muted-text); margin:0;">For ${emp ? emp.name : 'Employee'} (${emp ? emp.employeeId : ''}) &bull; August 2026</p>
+                <p style="font-size:0.75rem; color:var(--muted-text); margin:0;">For ${emp ? emp.name : 'Employee'} (${emp ? emp.employeeId : ''}) &bull; selected payroll cycle</p>
               </div>
               <button onclick="window.closePayrollModal()" style="background:var(--panel-soft); border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; color:var(--muted-text);">✕</button>
             </div>
@@ -1604,7 +1323,7 @@
 
               <div>
                 <label style="display:block; font-weight:700; margin-bottom:4px;">Effective Date *</label>
-                <input type="date" name="effectiveDate" required value="2026-08-01" style="width:100%; background:var(--panel-soft); border:1px solid var(--line); border-radius:8px; padding:7px; color:var(--text);" />
+                <input type="date" name="effectiveDate" required value="${store.selectedYear}-${String(store.selectedMonth).padStart(2, '0')}-01" style="width:100%; background:var(--panel-soft); border:1px solid var(--line); border-radius:8px; padding:7px; color:var(--text);" />
               </div>
 
               <div>
@@ -1631,7 +1350,7 @@
             <!-- Wizard Header & Steps Stepper -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
               <div>
-                <h3 style="font-size:1.15rem; font-weight:800; margin:0 0 2px;">Run Payroll Wizard &bull; August 2026</h3>
+                <h3 style="font-size:1.15rem; font-weight:800; margin:0 0 2px;">Run Payroll Wizard &bull; selected payroll cycle</h3>
                 <p style="font-size:0.75rem; color:var(--muted-text); margin:0;">Step ${step} of 4</p>
               </div>
               <button onclick="window.closePayrollModal()" style="background:var(--panel-soft); border:1px solid var(--line); border-radius:6px; padding:4px 8px; cursor:pointer; color:var(--muted-text);">✕</button>
@@ -1649,23 +1368,23 @@
             ${step === 1 ? `
               <div style="display:flex; flex-direction:column; gap:12px; font-size:0.78rem;">
                 <h4 style="font-size:0.9rem; font-weight:800; margin:0;">Step 1: Attendance & Unpaid Leave Verification</h4>
-                <p style="color:var(--muted-text); margin:0;">Review verified attendance metrics and approved Loss of Pay (LWP) days for August 2026.</p>
+                <p style="color:var(--muted-text); margin:0;">Review verified attendance metrics and approved Loss of Pay (LWP) days for selected payroll cycle.</p>
                 <div style="background:var(--panel-soft); border:1px solid var(--line); border-radius:10px; padding:12px;">
                   <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
                     <span>Total Calendar Days in Month:</span>
-                    <strong>31 Days</strong>
+                    <strong>${new Date(store.selectedYear, store.selectedMonth, 0).getDate()} Days</strong>
                   </div>
                   <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
                     <span>Employees with Zero Unpaid Leave:</span>
-                    <strong style="color:#10b981;">6 of 7 Employees (100% Payable)</strong>
+                    <strong style="color:#10b981;">${items.filter(i => !i.lwpDays).length} of ${items.length} Employees</strong>
                   </div>
                   <div style="display:flex; justify-content:space-between;">
                     <span>Employees with Loss of Pay (LWP):</span>
-                    <strong style="color:#ef4444;">1 Employee (Demo Person 18 &bull; 3 Days)</strong>
+                    <strong style="color:#ef4444;">${items.filter(i => i.lwpDays > 0).length} Employees</strong>
                   </div>
                 </div>
                 <div style="padding:10px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.2); border-radius:8px; color:#10b981; font-size:0.72rem;">
-                  ✓ Leave & attendance records are reconciled and verified.
+                  Review leave and attendance records before proceeding.
                 </div>
               </div>
             ` : ''}
@@ -1722,7 +1441,7 @@
                 <p style="color:var(--muted-text); margin:0;">Everything is calculated and verified. Confirming will update the active cycle register.</p>
                 <div style="padding:14px; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); border-radius:10px; color:#10b981;">
                   <div style="font-weight:800; font-size:0.85rem; margin-bottom:4px;">Ready for Payout File & Payslip Distribution</div>
-                  <div>All 7 employee records computed successfully. You can download the Bank Payout CSV and publish digital payslips immediately.</div>
+                  <div>${items.length} employee records in this register. Verify all values before finalizing.</div>
                 </div>
               </div>
             ` : ''}
@@ -1754,13 +1473,13 @@
               ${statusPill}
             </div>
             <p style="font-size:0.78rem; color:var(--muted-text); margin:4px 0 0;">
-              Review compensation, attendance adjustments and sample payslips.
+              Review compensation, attendance adjustments and saved payslips.
             </p>
           </div>
 
           <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px;">
             <button onclick="window.openRunPayrollWizard()" class="primary-button" style="display:inline-flex; align-items:center; gap:6px; font-size:0.78rem; padding:8px 14px;">
-              ${icons.zap} Run Payroll (Aug 2026)
+              ${icons.zap} Run Payroll (selected cycle)
             </button>
             <button onclick="window.exportBankPayoutCSV()" class="secondary-button" style="display:inline-flex; align-items:center; gap:6px; font-size:0.78rem; padding:8px 14px;">
               ${icons.download} Bank Payout CSV
